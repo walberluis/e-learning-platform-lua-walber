@@ -1,0 +1,2 @@
+[console_scripts]
+elearning-server = presentation.api.main:main

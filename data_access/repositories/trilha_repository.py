@@ -1,0 +1,326 @@
+"""
+Trilha (Learning Path) repository implementation.
+Data Access Layer - Repository Package
+"""
+
+from typing import List, Optional, Dict, Any
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import func, and_
+from data_access.repositories.base_repository import BaseRepository
+from infrastructure.database.models import Trilha, Conteudo, Usuario, Desempenho
+
+class TrilhaRepository(BaseRepository[Trilha]):
+    """
+    Repository for Trilha (Learning Path) entity operations.
+    Implements specific trilha-related database operations.
+    """
+    
+    def __init__(self, db_session: Session = None):
+        super().__init__(Trilha, db_session)
+    
+    async def get_with_conteudos(self, trilha_id: int) -> Optional[Trilha]:
+        """
+        Get trilha with all its content loaded.
+        
+        Args:
+            trilha_id: Trilha ID
+            
+        Returns:
+            Trilha with conteudos loaded or None if not found
+        """
+        try:
+            db = self.get_db()
+            return db.query(Trilha).options(joinedload(Trilha.conteudos)).filter(Trilha.id == trilha_id).first()
+        except Exception as e:
+            print(f"Error getting trilha with conteudos {trilha_id}: {e}")
+            return None
+    
+    async def get_with_usuarios(self, trilha_id: int) -> Optional[Trilha]:
+        """
+        Get trilha with enrolled users.
+        
+        Args:
+            trilha_id: Trilha ID
+            
+        Returns:
+            Trilha with usuarios loaded or None if not found
+        """
+        try:
+            db = self.get_db()
+            return db.query(Trilha).options(joinedload(Trilha.usuarios)).filter(Trilha.id == trilha_id).first()
+        except Exception as e:
+            print(f"Error getting trilha with usuarios {trilha_id}: {e}")
+            return None
+    
+    async def get_by_difficulty(self, dificuldade: str) -> List[Trilha]:
+        """
+        Get trilhas by difficulty level.
+        
+        Args:
+            dificuldade: Difficulty level (beginner, intermediate, advanced)
+            
+        Returns:
+            List of trilhas with matching difficulty
+        """
+        try:
+            db = self.get_db()
+            return db.query(Trilha).filter(Trilha.dificuldade == dificuldade).all()
+        except Exception as e:
+            print(f"Error getting trilhas by difficulty '{dificuldade}': {e}")
+            return []
+    
+    async def search_trilhas(self, search_term: str, limit: int = 50) -> List[Trilha]:
+        """
+        Search trilhas by title.
+        
+        Args:
+            search_term: Search term to match against title
+            limit: Maximum number of results
+            
+        Returns:
+            List of matching trilhas
+        """
+        try:
+            db = self.get_db()
+            search_pattern = f"%{search_term}%"
+            return db.query(Trilha).filter(
+                Trilha.titulo.ilike(search_pattern)
+            ).limit(limit).all()
+        except Exception as e:
+            print(f"Error searching trilhas with term '{search_term}': {e}")
+            return []
+    
+    async def get_popular_trilhas(self, limit: int = 10) -> List[Dict[str, Any]]:
+        """
+        Get most popular trilhas based on user enrollment.
+        
+        Args:
+            limit: Maximum number of results
+            
+        Returns:
+            List of trilhas with enrollment counts
+        """
+        try:
+            db = self.get_db()
+            result = db.query(
+                Trilha,
+                func.count(Usuario.id).label('enrollment_count')
+            ).outerjoin(
+                Trilha.usuarios
+            ).group_by(
+                Trilha.id
+            ).order_by(
+                func.count(Usuario.id).desc()
+            ).limit(limit).all()
+            
+            return [
+                {
+                    "trilha": trilha,
+                    "enrollment_count": count,
+                    "id": trilha.id,
+                    "titulo": trilha.titulo,
+                    "dificuldade": trilha.dificuldade
+                }
+                for trilha, count in result
+            ]
+        except Exception as e:
+            print(f"Error getting popular trilhas: {e}")
+            return []
+    
+    async def get_trilha_statistics(self, trilha_id: int) -> Dict[str, Any]:
+        """
+        Get comprehensive statistics for a trilha.
+        
+        Args:
+            trilha_id: Trilha ID
+            
+        Returns:
+            Dictionary with trilha statistics
+        """
+        try:
+            db = self.get_db()
+            trilha = db.query(Trilha).options(
+                joinedload(Trilha.conteudos),
+                joinedload(Trilha.usuarios)
+            ).filter(Trilha.id == trilha_id).first()
+            
+            if not trilha:
+                return {}
+            
+            # Get performance data for this trilha's content
+            desempenhos = db.query(Desempenho).join(Conteudo).filter(
+                Conteudo.trilha_id == trilha_id
+            ).all()
+            
+            total_enrollments = len(trilha.usuarios)
+            total_content = len(trilha.conteudos)
+            
+            if desempenhos:
+                avg_progress = sum(d.progresso for d in desempenhos) / len(desempenhos)
+                avg_grade = sum(d.nota for d in desempenhos if d.nota is not None) / len([d for d in desempenhos if d.nota is not None]) if any(d.nota is not None for d in desempenhos) else 0
+                total_study_time = sum(d.tempo_estudo for d in desempenhos)
+                completion_rate = len([d for d in desempenhos if d.progresso >= 100]) / len(desempenhos) * 100 if desempenhos else 0
+            else:
+                avg_progress = 0
+                avg_grade = 0
+                total_study_time = 0
+                completion_rate = 0
+            
+            return {
+                "trilha_id": trilha_id,
+                "titulo": trilha.titulo,
+                "dificuldade": trilha.dificuldade,
+                "total_enrollments": total_enrollments,
+                "total_content_items": total_content,
+                "average_progress": round(avg_progress, 2),
+                "average_grade": round(avg_grade, 2),
+                "completion_rate": round(completion_rate, 2),
+                "total_study_time_minutes": total_study_time,
+                "total_study_time_hours": round(total_study_time / 60, 2)
+            }
+        except Exception as e:
+            print(f"Error getting trilha statistics for {trilha_id}: {e}")
+            return {}
+    
+    async def get_recommended_trilhas_for_user(self, user_id: int, limit: int = 5) -> List[Trilha]:
+        """
+        Get recommended trilhas for a user based on their profile and progress.
+        
+        Args:
+            user_id: User ID
+            limit: Maximum number of recommendations
+            
+        Returns:
+            List of recommended trilhas
+        """
+        try:
+            db = self.get_db()
+            
+            # Get user's current trilhas to exclude them
+            user = db.query(Usuario).options(joinedload(Usuario.trilhas)).filter(Usuario.id == user_id).first()
+            if not user:
+                return []
+            
+            enrolled_trilha_ids = [t.id for t in user.trilhas]
+            
+            # Get trilhas user is not enrolled in
+            query = db.query(Trilha)
+            if enrolled_trilha_ids:
+                query = query.filter(~Trilha.id.in_(enrolled_trilha_ids))
+            
+            # For now, recommend based on difficulty progression
+            # In a real system, this would use ML algorithms
+            if user.perfil_aprend:
+                if user.perfil_aprend == "beginner":
+                    query = query.filter(Trilha.dificuldade.in_(["beginner", "intermediate"]))
+                elif user.perfil_aprend == "intermediate":
+                    query = query.filter(Trilha.dificuldade.in_(["intermediate", "advanced"]))
+                else:  # advanced
+                    query = query.filter(Trilha.dificuldade == "advanced")
+            
+            return query.limit(limit).all()
+        except Exception as e:
+            print(f"Error getting recommended trilhas for user {user_id}: {e}")
+            return []
+    
+    async def add_conteudo_to_trilha(self, trilha_id: int, conteudo_data: Dict[str, Any]) -> Optional[Conteudo]:
+        """
+        Add content to a trilha.
+        
+        Args:
+            trilha_id: Trilha ID
+            conteudo_data: Content data
+            
+        Returns:
+            Created Conteudo or None if failed
+        """
+        try:
+            db = self.get_db()
+            conteudo_data["trilha_id"] = trilha_id
+            conteudo = Conteudo(**conteudo_data)
+            db.add(conteudo)
+            db.commit()
+            db.refresh(conteudo)
+            return conteudo
+        except Exception as e:
+            db.rollback()
+            print(f"Error adding conteudo to trilha {trilha_id}: {e}")
+            return None
+    
+    async def get_trilhas_by_content_type(self, content_type: str) -> List[Trilha]:
+        """
+        Get trilhas that contain specific type of content.
+        
+        Args:
+            content_type: Type of content (video, text, quiz, etc.)
+            
+        Returns:
+            List of trilhas containing the specified content type
+        """
+        try:
+            db = self.get_db()
+            return db.query(Trilha).join(Conteudo).filter(
+                Conteudo.tipo == content_type
+            ).distinct().all()
+        except Exception as e:
+            print(f"Error getting trilhas by content type '{content_type}': {e}")
+            return []
+    
+    async def get_trilha_completion_stats(self, trilha_id: int) -> Dict[str, Any]:
+        """
+        Get completion statistics for a trilha.
+        
+        Args:
+            trilha_id: Trilha ID
+            
+        Returns:
+            Dictionary with completion statistics
+        """
+        try:
+            db = self.get_db()
+            
+            # Get all users enrolled in this trilha
+            trilha = db.query(Trilha).options(joinedload(Trilha.usuarios)).filter(Trilha.id == trilha_id).first()
+            if not trilha:
+                return {}
+            
+            total_users = len(trilha.usuarios)
+            if total_users == 0:
+                return {"trilha_id": trilha_id, "total_users": 0, "completion_stats": {}}
+            
+            # Get performance data for all content in this trilha
+            desempenhos = db.query(Desempenho).join(Conteudo).filter(
+                Conteudo.trilha_id == trilha_id
+            ).all()
+            
+            # Calculate completion statistics
+            completed_users = set()
+            in_progress_users = set()
+            not_started_users = set(user.id for user in trilha.usuarios)
+            
+            for desempenho in desempenhos:
+                user_id = desempenho.usuario_id
+                if desempenho.progresso >= 100:
+                    completed_users.add(user_id)
+                elif desempenho.progresso > 0:
+                    in_progress_users.add(user_id)
+                
+                # Remove from not started if user has any progress
+                if desempenho.progresso > 0:
+                    not_started_users.discard(user_id)
+            
+            return {
+                "trilha_id": trilha_id,
+                "titulo": trilha.titulo,
+                "total_users": total_users,
+                "completion_stats": {
+                    "completed": len(completed_users),
+                    "in_progress": len(in_progress_users),
+                    "not_started": len(not_started_users),
+                    "completion_rate": round(len(completed_users) / total_users * 100, 2),
+                    "engagement_rate": round((len(completed_users) + len(in_progress_users)) / total_users * 100, 2)
+                }
+            }
+        except Exception as e:
+            print(f"Error getting completion stats for trilha {trilha_id}: {e}")
+            return {}

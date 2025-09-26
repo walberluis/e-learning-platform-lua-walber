@@ -1,0 +1,139 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "e-learning-platform"
+version = "1.0.0"
+description = "AI-powered e-learning platform with personalized recommendations"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "E-Learning Team", email = "team@elearning.com"},
+]
+keywords = ["e-learning", "ai", "education", "machine-learning", "fastapi"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Education",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Framework :: FastAPI",
+    "Topic :: Education",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    # Web Framework
+    "fastapi>=0.104.0,<0.105.0",
+    "uvicorn[standard]>=0.24.0,<0.25.0",
+    
+    # Database (SQLite for Windows compatibility)
+    "sqlalchemy>=2.0.20,<2.1.0",
+    "aiosqlite>=0.19.0",
+    
+    # Data Validation
+    "pydantic[email]>=2.5.0,<3.0.0",
+    "pydantic-settings>=2.1.0,<3.0.0",
+    
+    # Authentication & Security
+    "python-jose[cryptography]>=3.3.0,<4.0.0",
+    "passlib[bcrypt]>=1.7.4,<2.0.0",
+    "python-multipart>=0.0.6,<1.0.0",
+    
+    # Templates & Static Files
+    "jinja2>=3.1.0,<4.0.0",
+    "aiofiles>=23.2.0,<24.0.0",
+    
+    # HTTP Client
+    "httpx>=0.25.0,<1.0.0",
+    
+    # AI & Machine Learning
+    "google-generativeai>=0.3.0,<1.0.0",
+    "lupa>=2.0,<3.0.0",
+    
+    # Cache & Message Queue (Redis alternative for Windows)
+    "diskcache>=5.6.0,<6.0.0",
+    
+    # Environment & Configuration
+    "python-dotenv>=1.0.0,<2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "flake8>=6.0.0",
+    "mypy>=1.5.0",
+]
+
+postgres = [
+    # PostgreSQL support (optional, for production)
+    "asyncpg>=0.29.0,<1.0.0",
+]
+
+redis = [
+    # Redis support (optional, for production)
+    "redis>=5.0.0,<6.0.0",
+    "celery>=5.3.0,<6.0.0",
+]
+
+prod = [
+    "gunicorn>=21.2.0",
+    "supervisor>=4.2.5",
+]
+
+[project.urls]
+Homepage = "https://github.com/your-org/e-learning-platform"
+Documentation = "https://your-org.github.io/e-learning-platform"
+Repository = "https://github.com/your-org/e-learning-platform.git"
+"Bug Tracker" = "https://github.com/your-org/e-learning-platform/issues"
+
+[project.scripts]
+elearning-server = "presentation.api.main:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["infrastructure*", "data_access*", "business*", "presentation*"]
+exclude = ["tests*", "docs*", "scripts*"]
+
+[tool.black]
+line-length = 100
+target-version = ['py311']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 100
+known_first_party = ["infrastructure", "data_access", "business", "presentation"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = [
+    "google.generativeai.*",
+    "diskcache.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]

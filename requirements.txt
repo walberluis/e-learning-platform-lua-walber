@@ -1,0 +1,39 @@
+# Core FastAPI dependencies
+fastapi==0.115.13
+uvicorn[standard]==0.34.3
+
+# Database dependencies
+sqlalchemy==2.0.23
+alembic==1.12.1
+
+# Validation dependencies
+pydantic==2.11.7
+email-validator==2.3.0
+
+# Authentication dependencies
+python-jose[cryptography]==3.5.0
+passlib[bcrypt]==1.7.4
+argon2-cffi==25.1.0
+
+# File handling dependencies
+python-multipart==0.0.20
+aiofiles==24.1.0
+
+# AI dependencies
+google-generativeai==0.8.5
+
+# Lua scripting dependencies
+lupa==2.5
+
+# HTTP client dependencies
+httpx==0.25.2
+
+# Template dependencies
+jinja2==3.1.2
+
+# Environment dependencies
+python-dotenv==1.0.0
+
+# Development dependencies
+pytest==7.4.3
+pytest-asyncio==0.21.1

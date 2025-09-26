@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema E-Learning - Plataforma de Aprendizado com IA</title>
+    <link rel="stylesheet" href="/static/css/main.css?v=1.5">
+    <link rel="stylesheet" href="/static/css/components.css?v=1.5">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="navbar">
+            <div class="nav-brand">
+                <i class="fas fa-graduation-cap"></i>
+                <span>E-Learning IA</span>
+            </div>
+            <div class="nav-menu">
+                <a href="#home" class="nav-link active">Início</a>
+                <a href="#trilhas" class="nav-link">Trilhas</a>
+                <a href="#dashboard" class="nav-link">Dashboard</a>
+                <a href="#chatbot" class="nav-link">Assistente IA</a>
+            </div>
+            <div class="nav-actions">
+                <button class="btn btn-outline" id="loginBtn">Entrar</button>
+                <button class="btn btn-primary" id="registerBtn">Cadastrar</button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Home Section -->
+        <section id="home" class="section hero-section">
+            <div class="container">
+                <div class="hero-content">
+                    <div class="hero-text">
+                        <h1 class="hero-title">
+                            Aprenda com <span class="gradient-text">Inteligência Artificial</span>
+                        </h1>
+                        <p class="hero-description">
+                            Plataforma de e-learning personalizada que usa IA para recomendar conteúdo, 
+                            acompanhar seu progresso e acelerar seu aprendizado.
+                        </p>
+                        <div class="hero-actions">
+                            <button class="btn btn-primary btn-large" id="startLearningBtn">
+                                <i class="fas fa-play"></i>
+                                Começar a Aprender
+                            </button>
+                            <button class="btn btn-outline btn-large" id="exploreFeaturesBtn">
+                                <i class="fas fa-compass"></i>
+                                Explorar Recursos
+                            </button>
+                        </div>
+                    </div>
+                    <div class="hero-visual">
+                        <div class="ai-animation">
+                            <div class="ai-circle"></div>
+                            <div class="ai-particles">
+                                <div class="particle"></div>
+                                <div class="particle"></div>
+                                <div class="particle"></div>
+                                <div class="particle"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="section features-section">
+            <div class="container">
+                <div class="section-header">
+                    <h2 class="section-title">Recursos Inteligentes</h2>
+                    <p class="section-description">
+                        Nossa plataforma utiliza IA avançada para personalizar sua experiência de aprendizado
+                    </p>
+                </div>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <h3 class="feature-title">Recomendações IA</h3>
+                        <p class="feature-description">
+                            Algoritmos inteligentes analisam seu progresso e recomendam conteúdo personalizado
+                        </p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <h3 class="feature-title">Chatbot Inteligente</h3>
+                        <p class="feature-description">
+                            Assistente virtual disponível 24/7 para tirar dúvidas e orientar seus estudos
+                        </p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h3 class="feature-title">Análise de Progresso</h3>
+                        <p class="feature-description">
+                            Acompanhe seu desempenho com métricas detalhadas e insights personalizados
+                        </p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-route"></i>
+                        </div>
+                        <h3 class="feature-title">Trilhas Adaptativas</h3>
+                        <p class="feature-description">
+                            Caminhos de aprendizado que se adaptam ao seu ritmo e estilo de aprendizagem
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Trilhas Section -->
+        <section id="trilhas" class="section trilhas-section">
+            <div class="container">
+                <div class="section-header">
+                    <h2 class="section-title">Trilhas de Aprendizado</h2>
+                    <p class="section-description">
+                        Explore nossas trilhas estruturadas para diferentes níveis de conhecimento
+                    </p>
+                </div>
+                <div class="trilhas-filters">
+                    <button class="filter-btn active" data-filter="all">Todas</button>
+                    <button class="filter-btn" data-filter="beginner">Iniciante</button>
+                    <button class="filter-btn" data-filter="intermediate">Intermediário</button>
+                    <button class="filter-btn" data-filter="advanced">Avançado</button>
+                </div>
+                <div class="trilhas-grid" id="trilhasGrid">
+                    <!-- Trilhas will be loaded dynamically -->
+                    <div class="loading-spinner">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Carregando trilhas...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="section dashboard-section" style="display: none;">
+            <div class="container">
+                <div class="section-header">
+                    <h2 class="section-title">Meu Dashboard</h2>
+                    <p class="section-description">
+                        Acompanhe seu progresso e estatísticas de aprendizado
+                    </p>
+                </div>
+                <div class="dashboard-grid">
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3>Progresso Geral</h3>
+                            <i class="fas fa-chart-pie"></i>
+                        </div>
+                        <div class="progress-circle">
+                            <div class="progress-value" id="overallProgress">0%</div>
+                        </div>
+                    </div>
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3>Trilhas Ativas</h3>
+                            <i class="fas fa-book-open"></i>
+                        </div>
+                        <div class="stat-value" id="activeTrilhas">0</div>
+                    </div>
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3>Tempo de Estudo</h3>
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-value" id="studyTime">0h</div>
+                    </div>
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3>Sequência de Dias</h3>
+                            <i class="fas fa-fire"></i>
+                        </div>
+                        <div class="stat-value" id="learningStreak">0</div>
+                    </div>
+                </div>
+                <div class="recommendations-section">
+                    <h3>Recomendações Personalizadas</h3>
+                    <div class="recommendations-grid" id="recommendationsGrid">
+                        <!-- Recommendations will be loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Chatbot Section -->
+        <section id="chatbot" class="section chatbot-section" style="display: none;">
+            <div class="container">
+                <div class="section-header">
+                    <h2 class="section-title">Assistente IA</h2>
+                    <p class="section-description">
+                        Converse com nosso assistente inteligente para obter ajuda personalizada
+                    </p>
+                </div>
+                <div class="chatbot-container">
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="message bot-message">
+                            <div class="message-avatar">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <div class="message-content">
+                                <p>Olá! Sou seu assistente de aprendizado. Como posso ajudá-lo hoje?</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-input-container">
+                        <div class="chat-input">
+                            <input type="text" id="chatInput" placeholder="Digite sua mensagem...">
+                            <button id="sendMessageBtn" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                        <div class="quick-actions">
+                            <button class="quick-action-btn" data-message="Me recomende um curso">
+                                Recomendar Curso
+                            </button>
+                            <button class="quick-action-btn" data-message="Como está meu progresso?">
+                                Meu Progresso
+                            </button>
+                            <button class="quick-action-btn" data-message="Preciso de ajuda com Python">
+                                Ajuda com Python
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modals -->
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Entrar na Plataforma</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="loginEmail">Email</label>
+                        <input type="email" id="loginEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Senha</label>
+                        <input type="password" id="loginPassword" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">Entrar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Criar Conta</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="registerForm">
+                    <div class="form-group">
+                        <label for="registerName">Nome Completo</label>
+                        <input type="text" id="registerName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerEmail">Email</label>
+                        <input type="email" id="registerEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerPassword">Senha</label>
+                        <input type="password" id="registerPassword" required minlength="6" placeholder="Mínimo 6 caracteres">
+                    </div>
+                    <div class="form-group">
+                        <label for="registerConfirmPassword">Confirmar Senha</label>
+                        <input type="password" id="registerConfirmPassword" required minlength="6" placeholder="Digite a senha novamente">
+                    </div>
+                    <div class="form-group">
+                        <label for="registerProfile">Nível de Conhecimento</label>
+                        <select id="registerProfile" required>
+                            <option value="">Selecione seu nível</option>
+                            <option value="beginner">Iniciante</option>
+                            <option value="intermediate">Intermediário</option>
+                            <option value="advanced">Avançado</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">Criar Conta</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Chatbot Button -->
+    <div class="floating-chatbot" id="floatingChatbot">
+        <i class="fas fa-comments"></i>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/static/js/main.js?v=1.5"></script>
+    <script src="/static/js/api.js?v=1.3"></script>
+    <script src="/static/js/chatbot.js?v=1.3"></script>
+    <script src="/static/js/dashboard.js?v=1.3"></script>
+</body>
+</html>
