@@ -1,28 +1,81 @@
-# 🎓 Sistema E-Learning com IA
+# Sistema E-Learning com IA
 
 Uma plataforma de e-learning moderna e inteligente que utiliza IA para personalizar a experiência de aprendizado, com arquitetura limpa, microserviços e integração com Google Gemini.
 
-## 🚀 Características Principais
+## Sobre o Projeto
 
-### 🤖 Inteligência Artificial
+O Sistema E-Learning com IA é uma plataforma educacional avançada que combina tecnologias modernas de desenvolvimento web com inteligência artificial para criar uma experiência de aprendizado personalizada e eficiente. O sistema foi projetado seguindo os princípios da Arquitetura Limpa (Clean Architecture), garantindo separação de responsabilidades, testabilidade e manutenibilidade.
+
+### Características Principais
+
+#### Inteligência Artificial
 - **Recomendações Personalizadas**: Sistema de recomendação baseado em IA usando Google Gemini
 - **Chatbot Inteligente**: Assistente virtual 24/7 com processamento de linguagem natural
 - **Análise de Padrões**: Análise inteligente do comportamento de aprendizado
 - **Scripts Lua**: Lógica de negócio implementada em Lua para flexibilidade
 
-### 📚 Gestão de Aprendizado
+#### Gestão de Aprendizado
 - **Trilhas Adaptativas**: Caminhos de aprendizado que se adaptam ao progresso do usuário
 - **Acompanhamento de Progresso**: Métricas detalhadas e analytics em tempo real
 - **Conteúdo Diversificado**: Suporte a vídeos, textos, quizzes e exercícios práticos
 - **Avaliações Inteligentes**: Sistema de avaliação com feedback automático
 
-### 🏗️ Arquitetura Moderna
+#### Arquitetura Moderna
 - **Arquitetura Limpa**: Separação clara de responsabilidades em camadas
 - **API RESTful**: API completa com FastAPI e documentação automática
 - **Frontend Responsivo**: Interface moderna com HTML5, CSS3 e JavaScript
 - **Banco de Dados**: SQLite para desenvolvimento, PostgreSQL para produção
 
-### 🔧 Tecnologias Utilizadas
+## Arquitetura do Sistema
+
+O sistema segue os princípios da Arquitetura Limpa (Clean Architecture), organizando o código em camadas bem definidas:
+
+### Camadas da Arquitetura
+
+#### 1. Camada de Apresentação (Presentation Layer)
+- **Responsabilidade**: Interface com o usuário e controle de entrada/saída
+- **Componentes**:
+  - API REST com FastAPI
+  - Interface web HTML/CSS/JavaScript
+  - Validação de entrada
+  - Serialização de dados
+
+#### 2. Camada de Negócio (Business Layer)
+- **Responsabilidade**: Regras de negócio e lógica da aplicação
+- **Componentes**:
+  - Serviços de domínio
+  - Casos de uso (Use Cases)
+  - Entidades de negócio
+  - Regras de validação
+
+#### 3. Camada de Acesso a Dados (Data Access Layer)
+- **Responsabilidade**: Persistência e recuperação de dados
+- **Componentes**:
+  - Repositórios
+  - Mapeamento objeto-relacional
+  - Queries e comandos
+  - Cache de dados
+
+#### 4. Camada de Infraestrutura (Infrastructure Layer)
+- **Responsabilidade**: Detalhes técnicos e integrações externas
+- **Componentes**:
+  - Configuração de banco de dados
+  - Integrações com APIs externas
+  - Segurança e autenticação
+  - Logging e monitoramento
+
+### Fluxo de Dados
+
+```
+Frontend → API (Presentation) → Business Logic → Data Access → Database
+                    ↓                ↓              ↓
+                 Validation    Use Cases     Repositories
+                    ↓                ↓              ↓
+                 Response      Domain Logic    Infrastructure
+```
+
+### Tecnologias Utilizadas
+
 - **Backend**: Python 3.11, FastAPI, SQLAlchemy
 - **Frontend**: HTML5, CSS3, JavaScript (Vanilla)
 - **Banco de Dados**: SQLite (desenvolvimento), PostgreSQL (produção)
@@ -30,7 +83,7 @@ Uma plataforma de e-learning moderna e inteligente que utiliza IA para personali
 - **Scripts**: Lua para lógica de negócio
 - **Autenticação**: JWT com Argon2 para hashing de senhas
 
-## 📋 Pré-requisitos
+## Pré-requisitos
 
 ### Desenvolvimento
 - Python 3.11+
@@ -44,7 +97,7 @@ Uma plataforma de e-learning moderna e inteligente que utiliza IA para personali
 - Domínio e certificado SSL (opcional)
 - Pelo menos 1GB RAM e 5GB de espaço em disco
 
-## ⚡ Instalação Rápida
+## Instalação Rápida
 
 ### 1. Clone o Repositório
 ```bash
@@ -61,12 +114,12 @@ chmod +x setup.sh
 ```
 
 O script irá:
-- ✅ Verificar e instalar Python 3.11+
-- ✅ Criar ambiente virtual
-- ✅ Instalar todas as dependências
-- ✅ Configurar banco de dados SQLite
-- ✅ Criar dados de exemplo
-- ✅ Iniciar a aplicação
+- Verificar e instalar Python 3.11+
+- Criar ambiente virtual
+- Instalar todas as dependências
+- Configurar banco de dados SQLite
+- Criar dados de exemplo
+- Iniciar a aplicação
 
 ### 3. Configure a API do Gemini (Opcional)
 Edite o arquivo `.env` e adicione sua chave API:
@@ -79,7 +132,7 @@ GEMINI_API_KEY=sua-chave-api-aqui
 - **Documentação da API**: http://localhost:8000/docs
 - **API Interativa**: http://localhost:8000/redoc
 
-## 🛠️ Instalação Manual
+## Instalação Manual
 
 ### 1. Ambiente Virtual Python
 ```bash
@@ -124,7 +177,7 @@ python -m uvicorn presentation.api.main:app --host 0.0.0.0 --port 8000 --reload
 python -m uvicorn presentation.api.main:app --host 0.0.0.0 --port 8000
 ```
 
-## 📁 Estrutura do Projeto
+## Estrutura do Projeto
 
 ```
 e-learning/
@@ -142,12 +195,13 @@ e-learning/
 ├── presentation/            # Camada de Apresentação
 │   ├── api/                # Endpoints FastAPI
 │   └── web/                # Frontend HTML/CSS/JS
-├── docker/                 # Configurações Docker
+├── lua_bridge/             # Integração Python-Lua
+├── lua_core/               # Scripts Lua para lógica de negócio
 ├── scripts/                # Scripts utilitários
 └── docs/                   # Documentação
 ```
 
-## 🔌 API Endpoints
+## API Endpoints
 
 ### Usuários
 - `POST /api/v1/users/` - Criar usuário
@@ -171,7 +225,7 @@ e-learning/
 - `POST /api/v1/recommendations/analyze/{user_id}` - Análise de padrões
 - `POST /api/v1/recommendations/search` - Busca inteligente
 
-## 🧪 Testes
+## Testes
 
 ### Executar Testes
 ```bash
@@ -199,30 +253,7 @@ curl -X POST "http://localhost:8000/api/v1/users/" \
   -d '{"nome": "Teste", "email": "teste@example.com", "perfil_aprend": "beginner"}'
 ```
 
-## 🐳 Docker
-
-### Desenvolvimento
-```bash
-# Iniciar todos os serviços
-docker-compose up -d
-
-# Ver logs
-docker-compose logs -f
-
-# Parar serviços
-docker-compose down
-```
-
-### Produção
-```bash
-# Build e deploy
-docker-compose -f docker-compose.prod.yml up -d
-
-# Backup do banco
-docker-compose exec postgres pg_dump -U elearning_user elearning_db > backup.sql
-```
-
-## 🔧 Configuração
+## Configuração
 
 ### Variáveis de Ambiente (.env)
 ```env
@@ -249,7 +280,72 @@ HOST=0.0.0.0
 PORT=8000
 ```
 
-### Configuração do Nginx (Produção)
+## Integração com IA
+
+### Google Gemini
+A plataforma utiliza o Google Gemini para:
+- Gerar recomendações personalizadas
+- Processar conversas do chatbot
+- Analisar conteúdo de aprendizado
+- Identificar padrões de comportamento
+
+### Scripts Lua
+Lógica de negócio implementada em Lua para:
+- Análise de intenções do chatbot
+- Cálculo de pontuações de recomendação
+- Processamento de regras de negócio
+- Validações customizadas
+
+## Monitoramento
+
+### Métricas Disponíveis
+- Usuários ativos
+- Taxa de conclusão de trilhas
+- Tempo médio de estudo
+- Eficácia das recomendações IA
+- Performance do sistema
+
+### Logs
+```bash
+# Logs da aplicação
+tail -f logs/app.log
+
+# Logs de erro
+tail -f logs/error.log
+
+# Logs de acesso
+tail -f logs/access.log
+```
+
+## Deploy em Produção
+
+### 1. Preparação do Servidor
+```bash
+# Atualizar sistema
+sudo apt update && sudo apt upgrade -y
+
+# Instalar Python 3.11
+sudo apt install python3.11 python3.11-venv python3.11-dev
+
+# Instalar PostgreSQL (opcional)
+sudo apt install postgresql postgresql-contrib
+```
+
+### 2. Configuração de Produção
+```bash
+# Clonar repositório
+git clone <repository-url>
+cd e-learning
+
+# Configurar ambiente
+cp env.example .env
+# Editar .env com configurações de produção
+
+# Executar setup
+./setup.sh
+```
+
+### 3. Configuração do Nginx (Opcional)
 ```nginx
 server {
     listen 80;
@@ -268,71 +364,7 @@ server {
 }
 ```
 
-## 🤖 Integração com IA
-
-### Google Gemini
-A plataforma utiliza o Google Gemini para:
-- Gerar recomendações personalizadas
-- Processar conversas do chatbot
-- Analisar conteúdo de aprendizado
-- Identificar padrões de comportamento
-
-### Scripts Lua
-Lógica de negócio implementada em Lua para:
-- Análise de intenções do chatbot
-- Cálculo de pontuações de recomendação
-- Processamento de regras de negócio
-- Validações customizadas
-
-## 📊 Monitoramento
-
-### Métricas Disponíveis
-- Usuários ativos
-- Taxa de conclusão de trilhas
-- Tempo médio de estudo
-- Eficácia das recomendações IA
-- Performance do sistema
-
-### Logs
-```bash
-# Logs da aplicação
-docker-compose logs app
-
-# Logs do banco de dados
-docker-compose logs postgres
-
-# Logs do Celery
-docker-compose logs celery_worker
-```
-
-## 🚀 Deploy em Produção
-
-### 1. Preparação do Servidor
-```bash
-# Instalar Docker
-curl -fsSL https://get.docker.com -o get-docker.sh
-sh get-docker.sh
-
-# Instalar Docker Compose
-sudo curl -L "https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
-```
-
-### 2. Configuração de Produção
-```bash
-# Clonar repositório
-git clone <repository-url>
-cd e-learning
-
-# Configurar ambiente
-cp env.example .env
-# Editar .env com configurações de produção
-
-# Deploy
-docker-compose -f docker-compose.prod.yml up -d
-```
-
-### 3. SSL/HTTPS (Opcional)
+### 4. SSL/HTTPS (Opcional)
 ```bash
 # Instalar Certbot
 sudo apt install certbot python3-certbot-nginx
@@ -341,7 +373,7 @@ sudo apt install certbot python3-certbot-nginx
 sudo certbot --nginx -d seu-dominio.com
 ```
 
-## 🤝 Contribuição
+## Contribuição
 
 ### Como Contribuir
 1. Fork o projeto
@@ -357,21 +389,21 @@ sudo certbot --nginx -d seu-dominio.com
 - Escrever testes para novas funcionalidades
 - Manter cobertura de testes > 80%
 
-## 📝 Licença
+## Licença
 
 Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
 
-## 🆘 Suporte
+## Suporte
 
 ### Problemas Comuns
 
 #### Erro de Conexão com Banco
 ```bash
 # Verificar se PostgreSQL está rodando
-docker-compose ps postgres
+sudo systemctl status postgresql
 
 # Reiniciar serviços
-docker-compose restart postgres
+sudo systemctl restart postgresql
 ```
 
 #### Erro na API do Gemini
@@ -386,32 +418,8 @@ python -c "import google.generativeai as genai; genai.configure(api_key='sua-cha
 #### Problemas de Performance
 ```bash
 # Verificar uso de recursos
-docker stats
+htop
 
-# Limpar cache Redis
-docker-compose exec redis redis-cli FLUSHALL
+# Verificar logs de erro
+tail -f logs/error.log
 ```
-
-### Contato
-- 📧 Email: suporte@elearning.com
-- 💬 Discord: [Link do Discord]
-- 📖 Wiki: [Link da Wiki]
-- 🐛 Issues: [Link dos Issues]
-
-## 🎯 Roadmap
-
-### Versão 2.0
-- [ ] Integração com mais provedores de IA
-- [ ] Sistema de gamificação
-- [ ] Aprendizado colaborativo
-- [ ] Mobile app (React Native)
-- [ ] Integração com LMS externos
-
-### Versão 1.5
-- [ ] Sistema de certificados
-- [ ] Relatórios avançados
-- [ ] Integração com calendário
-- [ ] Notificações push
-- [ ] Modo offline
-
----

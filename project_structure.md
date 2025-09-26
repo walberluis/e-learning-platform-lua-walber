@@ -18,7 +18,7 @@ e-learning/
 ├── presentation/            # Presentation Layer
 │   ├── api/                # FastAPI endpoints
 │   └── web/                # HTML/CSS frontend
-├── docker/                 # Docker configurations
+├── config/                 # Configuration files
 ├── scripts/                # Setup scripts
 └── docs/                   # Documentation
 ```
@@ -38,5 +38,5 @@ Implementing a complete learning path recommendation system that traverses all a
 - **Frontend**: HTML/CSS/JavaScript
 - **Database**: PostgreSQL
 - **AI/LLM**: Google Gemini API
-- **Containerization**: Docker
+- **Process Management**: Systemd/PM2
 - **Language**: Lua scripts for business logic
