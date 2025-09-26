@@ -389,10 +389,6 @@ sudo certbot --nginx -d seu-dominio.com
 - Escrever testes para novas funcionalidades
 - Manter cobertura de testes > 80%
 
-## Licença
-
-Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
-
 ## Suporte
 
 ### Problemas Comuns
