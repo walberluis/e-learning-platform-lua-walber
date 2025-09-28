@@ -253,3 +253,4 @@ class AnalyticsService:
 message_queue = MessageQueue()
 notification_service = NotificationService(message_queue)
 analytics_service = AnalyticsService(message_queue)
+

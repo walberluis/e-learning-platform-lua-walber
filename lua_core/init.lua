@@ -10,7 +10,9 @@ local config = {
 
 -- Load core modules (simplified)
 local user_manager = require("lua_core.business.user_manager")
--- local course_manager = require("lua_core.business.course_manager")
+local course_manager = require("lua_core.business.course_manager")
+local trilha_generator = require("lua_core.business.trilha_generator")
+local quiz_manager = require("lua_core.business.quiz_manager")
 -- local ai_assistant = require("lua_core.ai.assistant")
 -- local database = require("lua_core.data.database")
 -- local utils = require("lua_core.utils.helpers")
@@ -31,7 +33,9 @@ local elearning = {
     
     -- Core business modules
     users = user_manager,
-    -- courses = course_manager,
+    courses = course_manager,
+    trilha_generator = trilha_generator,
+    quiz_manager = quiz_manager,
     -- ai = ai_assistant,
     
     -- Initialization

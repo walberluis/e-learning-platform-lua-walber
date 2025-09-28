@@ -119,3 +119,4 @@ class UserTrilhaProgressResponse(BaseModel):
     average_progress: float
     average_grade: float
     total_study_time_hours: float
+

@@ -388,3 +388,4 @@ class DesempenhoRepository(BaseRepository[Desempenho]):
         except Exception as e:
             print(f"Error getting top performers by {metric}: {e}")
             return []
+

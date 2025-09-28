@@ -135,6 +135,16 @@
                     <button class="filter-btn" data-filter="intermediate">Intermediário</button>
                     <button class="filter-btn" data-filter="advanced">Avançado</button>
                 </div>
+                <div class="trilhas-actions">
+                    <button class="btn btn-primary" id="createTrilhaBtn" style="display: none;">
+                        <i class="fas fa-plus"></i>
+                        Criar Nova Trilha
+                    </button>
+                    <button class="btn btn-outline" id="continueTrilhaBtn" style="display: none;">
+                        <i class="fas fa-play"></i>
+                        Continuar Trilha Existente
+                    </button>
+                </div>
                 <div class="trilhas-grid" id="trilhasGrid">
                     <!-- Trilhas will be loaded dynamically -->
                     <div class="loading-spinner">
@@ -303,6 +313,147 @@
         </div>
     </div>
 
+    <!-- Create Trilha Modal -->
+    <div id="createTrilhaModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Criar Nova Trilha de Aprendizado</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="createTrilhaForm">
+                    <div class="form-group">
+                        <label for="trilhaTopic">O que você deseja aprender?</label>
+                        <textarea id="trilhaTopic" required placeholder="Ex: conceitos fundamentais da linguagem Python" rows="3"></textarea>
+                        <small class="form-help">Descreva detalhadamente o que você gostaria de aprender</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="trilhaDifficulty">Nível de Dificuldade</label>
+                        <select id="trilhaDifficulty" required>
+                            <option value="">Selecione o nível</option>
+                            <option value="iniciante">Iniciante</option>
+                            <option value="intermediario">Intermediário</option>
+                            <option value="avancado">Avançado</option>
+                        </select>
+                    </div>
+                    <div class="trilha-preview" id="trilhaPreview" style="display: none;">
+                        <h4>Prévia da Trilha:</h4>
+                        <div class="preview-content">
+                            <p><strong>Título:</strong> <span id="previewTitle"></span></p>
+                            <p><strong>Descrição:</strong> <span id="previewDescription"></span></p>
+                            <p><strong>Módulos estimados:</strong> <span id="previewModules"></span></p>
+                            <p><strong>Tempo estimado:</strong> <span id="previewDuration"></span></p>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-outline" id="previewTrilhaBtn">
+                            <i class="fas fa-eye"></i>
+                            Visualizar Prévia
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-magic"></i>
+                            Criar Trilha com IA
+                        </button>
+                    </div>
+                </form>
+                <div class="creation-progress" id="trilhaCreationProgress" style="display: none;">
+                    <div class="progress-steps">
+                        <div class="step active">
+                            <i class="fas fa-cog fa-spin"></i>
+                            <span>Gerando estrutura da trilha...</span>
+                        </div>
+                        <div class="step">
+                            <i class="fas fa-brain"></i>
+                            <span>Criando questões com IA...</span>
+                        </div>
+                        <div class="step">
+                            <i class="fas fa-check"></i>
+                            <span>Finalizando trilha...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quiz Modal -->
+    <div id="quizModal" class="modal modal-large">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="quizTitle">Quiz - Módulo</h3>
+                <div class="quiz-progress">
+                    <span id="quizProgress">Questão 1 de 10</span>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="quizProgressBar"></div>
+                    </div>
+                </div>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="quiz-container">
+                    <div class="quiz-question" id="quizQuestion">
+                        <h4 id="questionText">Carregando questão...</h4>
+                        <div class="quiz-options" id="quizOptions">
+                            <!-- Options will be loaded dynamically -->
+                        </div>
+                    </div>
+                    <div class="quiz-actions">
+                        <button class="btn btn-outline" id="quizPrevBtn" disabled>
+                            <i class="fas fa-arrow-left"></i>
+                            Anterior
+                        </button>
+                        <div class="quiz-timer">
+                            <i class="fas fa-clock"></i>
+                            <span id="quizTimer">30:00</span>
+                        </div>
+                        <button class="btn btn-primary" id="quizNextBtn" disabled>
+                            Próxima
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="quiz-results" id="quizResults" style="display: none;">
+                    <div class="results-header">
+                        <h3>Parabéns! Quiz Concluído!</h3>
+                        <div class="results-score">
+                            <div class="score-circle">
+                                <span id="finalScore">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="results-details">
+                        <div class="result-item">
+                            <i class="fas fa-check-circle text-success"></i>
+                            <span>Acertos: <strong id="correctAnswers">0</strong></span>
+                        </div>
+                        <div class="result-item">
+                            <i class="fas fa-times-circle text-error"></i>
+                            <span>Erros: <strong id="wrongAnswers">0</strong></span>
+                        </div>
+                        <div class="result-item">
+                            <i class="fas fa-clock"></i>
+                            <span>Tempo: <strong id="totalTime">0 min</strong></span>
+                        </div>
+                        <div class="result-item">
+                            <i class="fas fa-star"></i>
+                            <span>Desempenho: <strong id="performanceLevel">-</strong></span>
+                        </div>
+                    </div>
+                    <div class="results-actions">
+                        <button class="btn btn-outline" id="reviewAnswersBtn">
+                            <i class="fas fa-eye"></i>
+                            Revisar Respostas
+                        </button>
+                        <button class="btn btn-primary" id="finishQuizBtn">
+                            <i class="fas fa-home"></i>
+                            Voltar ao Dashboard
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Floating Chatbot Button -->
     <div class="floating-chatbot" id="floatingChatbot">
         <i class="fas fa-comments"></i>
@@ -313,5 +464,6 @@
     <script src="/static/js/api.js?v=1.3"></script>
     <script src="/static/js/chatbot.js?v=1.3"></script>
     <script src="/static/js/dashboard.js?v=1.3"></script>
+    <script src="/static/js/trilhas_personalizadas.js?v=1.0"></script>
 </body>
 </html>

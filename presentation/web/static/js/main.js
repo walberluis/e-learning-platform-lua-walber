@@ -66,6 +66,13 @@ window.elearning = {
             document.getElementById('logoutBtn').addEventListener('click', () => {
                 this.logout();
             });
+            
+            // Update trilhas personalizadas buttons if on trilhas section
+            if (this.currentSection === 'trilhas' && window.trilhasPersonalizadas?.checkStatus) {
+                setTimeout(() => {
+                    window.trilhasPersonalizadas.checkStatus();
+                }, 100);
+            }
         } else {
             // Show login/register buttons
             navActions.innerHTML = `
@@ -75,6 +82,12 @@ window.elearning = {
             
             // Re-add event listeners
             setupAuthButtons();
+            
+            // Hide trilhas personalizadas buttons
+            const createBtn = document.getElementById('createTrilhaBtn');
+            const continueBtn = document.getElementById('continueTrilhaBtn');
+            if (createBtn) createBtn.style.display = 'none';
+            if (continueBtn) continueBtn.style.display = 'none';
         }
     },
     
@@ -126,6 +139,12 @@ window.elearning = {
             case 'trilhas':
                 if (typeof loadTrilhas === 'function') {
                     loadTrilhas();
+                }
+                // Check trilhas personalizadas status if user is logged in
+                if (this.isAuthenticated && window.trilhasPersonalizadas?.checkStatus) {
+                    setTimeout(() => {
+                        window.trilhasPersonalizadas.checkStatus();
+                    }, 500);
                 }
                 break;
             case 'dashboard':
@@ -358,6 +377,11 @@ function showLoading(show) {
 async function loadTrilhas() {
     const trilhasGrid = document.getElementById('trilhasGrid');
     if (!trilhasGrid) return;
+    
+    // Check user trilha status for personalized trilhas
+    if (window.elearning?.isAuthenticated && window.trilhasPersonalizadas?.checkStatus) {
+        await window.trilhasPersonalizadas.checkStatus();
+    }
     
     try {
         trilhasGrid.innerHTML = `

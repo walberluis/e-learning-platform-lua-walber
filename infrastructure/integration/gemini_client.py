@@ -24,7 +24,24 @@ class GeminiClient:
             raise ValueError("GEMINI_API_KEY environment variable is required")
         
         genai.configure(api_key=self.api_key)
-        self.model = genai.GenerativeModel('gemini-1.5-flash-8b')
+        self.model = genai.GenerativeModel('models/gemini-2.5-flash')
+    
+    async def generate_content(self, prompt: str) -> str:
+        """
+        Generate content using Gemini AI with a custom prompt.
+        
+        Args:
+            prompt: The prompt to send to the AI
+            
+        Returns:
+            AI-generated content as text
+        """
+        try:
+            response = await asyncio.to_thread(self.model.generate_content, prompt)
+            return response.text
+        except Exception as e:
+            print(f"Error generating content: {e}")
+            return ""
     
     async def generate_learning_recommendations(self, user_profile: Dict, learning_history: List[Dict]) -> str:
         """
@@ -65,6 +82,62 @@ class GeminiClient:
         except Exception as e:
             print(f"Error generating chatbot response: {e}")
             return "I'm sorry, I'm having trouble understanding right now. Could you please rephrase your question?"
+    
+    async def generate_quiz_questions(self, topic: str, difficulty: str, module_title: str, count: int = 10) -> Dict:
+        """
+        Generate quiz questions for a learning module using Gemini AI.
+        
+        Args:
+            topic: Main learning topic
+            difficulty: Difficulty level (iniciante, intermediario, avancado)
+            module_title: Title of the specific module
+            count: Number of questions to generate
+            
+        Returns:
+            Generated questions in structured format
+        """
+        difficulty_descriptions = {
+            "iniciante": "nível iniciante (conceitos básicos, exemplos simples)",
+            "intermediario": "nível intermediário (conceitos mais complexos, aplicações práticas)",
+            "avancado": "nível avançado (conceitos especializados, cenários complexos)"
+        }
+        
+        difficulty_desc = difficulty_descriptions.get(difficulty, difficulty_descriptions["iniciante"])
+        
+        prompt = f"""
+Crie {count} questões de múltipla escolha sobre "{topic}" com foco em "{module_title}" para {difficulty_desc}.
+
+Cada questão deve ter:
+- Uma pergunta clara e objetiva
+- 5 alternativas (a, b, c, d, e)
+- Apenas uma resposta correta
+- Explicação detalhada da resposta correta
+
+IMPORTANTE: Retorne APENAS um JSON válido no seguinte formato:
+[
+  {{
+    "pergunta": "Texto da pergunta aqui",
+    "alternativas": {{
+      "a": "Primeira opção",
+      "b": "Segunda opção", 
+      "c": "Terceira opção",
+      "d": "Quarta opção",
+      "e": "Quinta opção"
+    }},
+    "resposta_correta": "a",
+    "explicacao": "Explicação detalhada da resposta correta"
+  }}
+]
+
+Não inclua texto adicional, apenas o JSON válido com {count} questões.
+"""
+        
+        try:
+            response = await asyncio.to_thread(self.model.generate_content, prompt)
+            return {"questions": response.text, "status": "success"}
+        except Exception as e:
+            print(f"Error generating quiz questions: {e}")
+            return {"questions": None, "status": "error", "error": str(e)}
     
     async def analyze_learning_content(self, content: str, content_type: str) -> Dict:
         """

@@ -403,3 +403,4 @@ def health_check():
         'timestamp': datetime.utcnow().isoformat(),
         'worker_id': current_task.request.id
     }
+

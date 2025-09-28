@@ -242,3 +242,4 @@ class RepositoryManager:
         """Rollback current transaction."""
         if self.db_session:
             self.db_session.rollback()
+

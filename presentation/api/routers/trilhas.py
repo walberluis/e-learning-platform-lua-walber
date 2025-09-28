@@ -425,3 +425,4 @@ async def get_trilha_completion_stats(trilha_id: int):
         success=True,
         data=completion_stats
     )
+

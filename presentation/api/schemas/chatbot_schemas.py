@@ -130,3 +130,4 @@ class PersonalizedContentResponse(BaseModel):
     internal_recommendations: List[ContentRecommendation]
     external_recommendations: List[ExternalContent]
     generated_at: str
+

@@ -57,9 +57,12 @@ async function loadDashboardData() {
         // Load learning path
         const learningPathPromise = UserAPI.getLearningPath(currentUser.id);
         
+        // Load custom trilhas
+        const customTrilhasPromise = loadUserCustomTrilhas(currentUser.id);
+        
         // Wait for all data
-        const [profileResponse, analyticsResponse, recommendationsResponse, learningPathResponse] = 
-            await Promise.all([profilePromise, analyticsPromise, recommendationsPromise, learningPathPromise]);
+        const [profileResponse, analyticsResponse, recommendationsResponse, learningPathResponse, customTrilhasResponse] = 
+            await Promise.all([profilePromise, analyticsPromise, recommendationsPromise, learningPathPromise, customTrilhasPromise]);
         
         // Update dashboard with loaded data
         if (profileResponse.success) {
@@ -78,12 +81,17 @@ async function loadDashboardData() {
             updateLearningPathSection(learningPathResponse.data);
         }
         
+        if (customTrilhasResponse.success) {
+            updateCustomTrilhasSection(customTrilhasResponse.data);
+        }
+        
         // Store dashboard data
         dashboardData = {
             profile: profileResponse.data,
             analytics: analyticsResponse.data,
             recommendations: recommendationsResponse.data,
-            learningPath: learningPathResponse.data
+            learningPath: learningPathResponse.data,
+            customTrilhas: customTrilhasResponse.data
         };
         
     } catch (error) {
@@ -412,6 +420,120 @@ async function loadAnalytics(days) {
     } catch (error) {
         console.error('Error loading analytics:', error);
     }
+}
+
+// Load user custom trilhas
+async function loadUserCustomTrilhas(userId) {
+    try {
+        const response = await fetch(`/api/v1/trilhas-personalizadas/user/${userId}/created`);
+        const result = await response.json();
+        return result;
+    } catch (error) {
+        console.error('Error loading custom trilhas:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+// Update custom trilhas section
+function updateCustomTrilhasSection(customTrilhasData) {
+    // Add custom trilhas card to dashboard if it doesn't exist
+    let customTrilhasContainer = document.getElementById('customTrilhasContainer');
+    
+    if (!customTrilhasContainer) {
+        // Create custom trilhas section
+        const dashboardGrid = document.querySelector('.dashboard-grid');
+        if (dashboardGrid) {
+            const customTrilhasCard = document.createElement('div');
+            customTrilhasCard.className = 'dashboard-card';
+            customTrilhasCard.innerHTML = `
+                <div class="card-header">
+                    <h3>Trilhas Criadas</h3>
+                    <i class="fas fa-magic"></i>
+                </div>
+                <div id="customTrilhasContainer">
+                    <!-- Custom trilhas content will be loaded here -->
+                </div>
+            `;
+            dashboardGrid.appendChild(customTrilhasCard);
+            customTrilhasContainer = document.getElementById('customTrilhasContainer');
+        }
+    }
+    
+    if (!customTrilhasContainer) return;
+    
+    if (!customTrilhasData.trilhas || customTrilhasData.trilhas.length === 0) {
+        customTrilhasContainer.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-plus-circle"></i>
+                <p>Nenhuma trilha personalizada criada ainda</p>
+                <button class="btn btn-primary btn-small" onclick="window.trilhasPersonalizadas?.showCreateModal()">
+                    Criar Primeira Trilha
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    const trilhas = customTrilhasData.trilhas;
+    
+    customTrilhasContainer.innerHTML = `
+        <div class="custom-trilhas-stats">
+            <div class="stat-item">
+                <span class="stat-number">${trilhas.length}</span>
+                <span class="stat-label">Trilhas Criadas</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">${trilhas.reduce((sum, t) => sum + (t.enrollment_count || 0), 0)}</span>
+                <span class="stat-label">Total Inscrições</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">${Math.round(trilhas.reduce((sum, t) => sum + (t.completion_rate || 0), 0) / trilhas.length)}%</span>
+                <span class="stat-label">Taxa Média de Conclusão</span>
+            </div>
+        </div>
+        <div class="custom-trilhas-list">
+            ${trilhas.slice(0, 3).map(trilha => `
+                <div class="trilha-item">
+                    <div class="trilha-info">
+                        <h4>${trilha.titulo}</h4>
+                        <div class="trilha-meta">
+                            <span class="difficulty-badge difficulty-${trilha.dificuldade}">
+                                ${getDifficultyLabel(trilha.dificuldade)}
+                            </span>
+                            <span class="modules-count">${trilha.modules_count || 0} módulos</span>
+                        </div>
+                    </div>
+                    <div class="trilha-stats">
+                        <div class="stat">
+                            <i class="fas fa-users"></i>
+                            <span>${trilha.enrollment_count || 0}</span>
+                        </div>
+                        <div class="stat">
+                            <i class="fas fa-chart-line"></i>
+                            <span>${trilha.completion_rate || 0}%</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-small btn-outline" onclick="window.trilhasPersonalizadas?.startTrilha(${trilha.id})">
+                        <i class="fas fa-play"></i>
+                        Continuar
+                    </button>
+                </div>
+            `).join('')}
+        </div>
+        ${trilhas.length > 3 ? `
+            <div class="view-all-trilhas">
+                <button class="btn btn-outline btn-small" onclick="window.elearning?.showSection('trilhas')">
+                    Ver Todas as Trilhas
+                </button>
+            </div>
+        ` : ''}
+        <div class="create-new-trilha">
+            <button class="btn btn-primary btn-small" onclick="window.trilhasPersonalizadas?.showCreateModal()">
+                <i class="fas fa-plus"></i>
+                Criar Nova Trilha
+            </button>
+        </div>
+    `;
 }
 
 // Export dashboard data

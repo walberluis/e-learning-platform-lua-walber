@@ -12,7 +12,7 @@ import os
 from dotenv import load_dotenv
 
 # Import routers
-from presentation.api.routers import users, trilhas, content, chatbot, recommendations
+from presentation.api.routers import users, trilhas, content, chatbot, recommendations, trilhas_personalizadas
 
 # Import database initialization
 from infrastructure.database.connection import init_database
@@ -43,6 +43,7 @@ app.mount("/static", StaticFiles(directory="presentation/web/static"), name="sta
 # Include API routers
 app.include_router(users.router, prefix="/api/v1/users", tags=["Users"])
 app.include_router(trilhas.router, prefix="/api/v1/trilhas", tags=["Learning Paths"])
+app.include_router(trilhas_personalizadas.router, prefix="/api/v1/trilhas-personalizadas", tags=["Custom Learning Paths"])
 app.include_router(content.router, prefix="/api/v1/content", tags=["Content"])
 app.include_router(chatbot.router, prefix="/api/v1/chatbot", tags=["AI Chatbot"])
 app.include_router(recommendations.router, prefix="/api/v1/recommendations", tags=["AI Recommendations"])

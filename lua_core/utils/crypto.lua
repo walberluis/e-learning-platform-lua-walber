@@ -189,3 +189,4 @@ function crypto.generate_otp(length)
 end
 
 return crypto
+

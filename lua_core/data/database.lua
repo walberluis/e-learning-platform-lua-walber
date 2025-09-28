@@ -386,3 +386,4 @@ function database.clear_conversation_history(user_id)
 end
 
 return database
+

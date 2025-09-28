@@ -1,11 +1,30 @@
 -- Course Management Module (Lua)
 -- Handles all course and learning path related business logic
 
-local json = require("json")
-local db = require("lua_core.data.database")
-local utils = require("lua_core.utils.helpers")
+-- Note: json and db functionality will be handled by Python bridge
+-- local json = require("json")
+-- local db = require("lua_core.data.database")
+-- local utils = require("lua_core.utils.helpers")
 
 local course_manager = {}
+
+-- Mock database functions (will be replaced by Python bridge)
+local db = {
+    create_course = function(data) return 1 end,
+    get_courses = function(filters) return {} end,
+    find_course_by_id = function(id) return {id = id, titulo = "Test Course"} end,
+    get_course_enrollment_count = function(id) return 0 end,
+    get_course_average_rating = function(id) return 0 end,
+    get_course_completion_rate = function(id) return 0 end,
+    get_course_contents = function(id) return {} end,
+    get_user_enrollment = function(user_id, course_id) return nil end,
+    create_enrollment = function(data) return 1 end,
+    get_user_enrollments = function(user_id) return {} end,
+    update_enrollment = function(user_id, course_id, updates) return true end,
+    find_user_by_id = function(id) return {id = id, learning_profile = "iniciante"} end,
+    get_course_recommendations = function(user_id, options) return {} end,
+    search_courses = function(filters) return {} end
+}
 
 -- Course difficulty levels
 local difficulty_levels = {
@@ -431,3 +450,4 @@ function course_manager.search_courses(query, filters)
 end
 
 return course_manager
+

@@ -34,6 +34,8 @@ class Usuario(Base):
     # Relationships
     trilhas = relationship("Trilha", secondary=user_trilha_association, back_populates="usuarios")
     desempenhos = relationship("Desempenho", back_populates="usuario")
+    sessoes_quiz = relationship("SessaoQuiz", back_populates="usuario")
+    respostas_quiz = relationship("RespostaUsuario", back_populates="usuario")
     
     def __repr__(self):
         return f"<Usuario(id={self.id}, nome='{self.nome}', email='{self.email}')>"
@@ -54,6 +56,7 @@ class Trilha(Base):
     # Relationships
     usuarios = relationship("Usuario", secondary=user_trilha_association, back_populates="trilhas")
     conteudos = relationship("Conteudo", back_populates="trilha")
+    sessoes_quiz = relationship("SessaoQuiz", back_populates="trilha")
     
     def __repr__(self):
         return f"<Trilha(id={self.id}, titulo='{self.titulo}', dificuldade='{self.dificuldade}')>"
@@ -76,6 +79,8 @@ class Conteudo(Base):
     # Relationships
     trilha = relationship("Trilha", back_populates="conteudos")
     desempenhos = relationship("Desempenho", back_populates="conteudo")
+    questoes = relationship("Questao", back_populates="conteudo")
+    sessoes_quiz = relationship("SessaoQuiz", back_populates="conteudo")
     
     def __repr__(self):
         return f"<Conteudo(id={self.id}, titulo='{self.titulo}', tipo='{self.tipo}')>"
@@ -102,6 +107,82 @@ class Desempenho(Base):
     
     def __repr__(self):
         return f"<Desempenho(id={self.id}, usuario_id={self.usuario_id}, progresso={self.progresso})>"
+
+class Questao(Base):
+    """
+    Question model for quizzes and assessments.
+    """
+    __tablename__ = "questoes"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    conteudo_id = Column(Integer, ForeignKey("conteudos.id"), nullable=False)
+    pergunta = Column(Text, nullable=False)
+    alternativas = Column(Text, nullable=False)  # JSON string with options a, b, c, d, e
+    resposta_correta = Column(String(1), nullable=False)  # a, b, c, d, or e
+    explicacao = Column(Text, nullable=True)
+    ordem = Column(Integer, default=1)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    conteudo = relationship("Conteudo", back_populates="questoes")
+    respostas = relationship("RespostaUsuario", back_populates="questao")
+    
+    def __repr__(self):
+        return f"<Questao(id={self.id}, conteudo_id={self.conteudo_id}, pergunta='{self.pergunta[:50]}...')>"
+
+class SessaoQuiz(Base):
+    """
+    Quiz session model to track user quiz attempts.
+    """
+    __tablename__ = "sessoes_quiz"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    conteudo_id = Column(Integer, ForeignKey("conteudos.id"), nullable=False)
+    trilha_id = Column(Integer, ForeignKey("trilhas.id"), nullable=False)
+    total_questoes = Column(Integer, nullable=False)
+    questao_atual = Column(Integer, default=1)
+    respostas_corretas = Column(Integer, default=0)
+    respostas_erradas = Column(Integer, default=0)
+    status = Column(String(20), default="started")  # started, in_progress, completed, abandoned
+    iniciado_em = Column(DateTime(timezone=True), server_default=func.now())
+    completado_em = Column(DateTime(timezone=True), nullable=True)
+    tempo_limite = Column(Integer, default=1800)  # 30 minutes in seconds
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    usuario = relationship("Usuario", back_populates="sessoes_quiz")
+    conteudo = relationship("Conteudo", back_populates="sessoes_quiz")
+    trilha = relationship("Trilha", back_populates="sessoes_quiz")
+    respostas = relationship("RespostaUsuario", back_populates="sessao")
+    
+    def __repr__(self):
+        return f"<SessaoQuiz(id={self.id}, usuario_id={self.usuario_id}, status='{self.status}')>"
+
+class RespostaUsuario(Base):
+    """
+    User answer model for quiz questions.
+    """
+    __tablename__ = "respostas_usuario"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    sessao_id = Column(Integer, ForeignKey("sessoes_quiz.id"), nullable=False)
+    questao_id = Column(Integer, ForeignKey("questoes.id"), nullable=False)
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    resposta_selecionada = Column(String(1), nullable=False)  # a, b, c, d, or e
+    resposta_correta = Column(String(1), nullable=False)
+    esta_correta = Column(Boolean, nullable=False)
+    respondido_em = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relationships
+    sessao = relationship("SessaoQuiz", back_populates="respostas")
+    questao = relationship("Questao", back_populates="respostas")
+    usuario = relationship("Usuario", back_populates="respostas_quiz")
+    
+    def __repr__(self):
+        return f"<RespostaUsuario(id={self.id}, questao_id={self.questao_id}, esta_correta={self.esta_correta})>"
 
 class Chatbot(Base):
     """

@@ -324,3 +324,4 @@ class TrilhaRepository(BaseRepository[Trilha]):
         except Exception as e:
             print(f"Error getting completion stats for trilha {trilha_id}: {e}")
             return {}
+

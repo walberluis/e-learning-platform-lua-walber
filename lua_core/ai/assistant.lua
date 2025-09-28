@@ -362,3 +362,4 @@ function assistant.clear_conversation_history(user_id)
 end
 
 return assistant
+

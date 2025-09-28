@@ -403,3 +403,4 @@ class RecommendationEngine:
             improvements.append("Build more consistent learning habits")
         
         return improvements or ["Continue current learning approach"]
+

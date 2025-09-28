@@ -250,3 +250,4 @@ class UsuarioRepository(BaseRepository[Usuario]):
             Updated user or None if failed
         """
         return await self.update(user_id, {"perfil_aprend": perfil_aprend})
+
