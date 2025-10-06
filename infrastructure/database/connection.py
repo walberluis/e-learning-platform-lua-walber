@@ -70,10 +70,21 @@ def init_database():
     Initialize database tables.
     Creates all tables defined in models.
     """
-    # Import models to register them with Base
-    import infrastructure.database.models  # This will register all models
-    Base.metadata.create_all(bind=engine)
-    print("Database tables created successfully!")
+    try:
+        # Import models to register them with Base
+        import infrastructure.database.models  # This will register all models
+        
+        # Create all tables
+        Base.metadata.create_all(bind=engine)
+        print("Database tables created successfully!")
+        
+    except Exception as e:
+        print(f"Database initialization failed: {e}")
+        # Try to provide more helpful error information
+        if "TypingOnly" in str(e):
+            print("This appears to be a SQLAlchemy version compatibility issue.")
+            print("   Try upgrading SQLAlchemy: pip install --upgrade sqlalchemy")
+        raise e
 
 def close_database():
     """

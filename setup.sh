@@ -225,7 +225,7 @@ install_dependencies() {
     pip install fastapi==0.115.13 uvicorn[standard]==0.34.3
     
     print_status "Installing database dependencies..."
-    pip install sqlalchemy==2.0.23 alembic==1.12.1
+    pip install sqlalchemy==2.0.35 alembic==1.13.3
     
     print_status "Installing validation dependencies..."
     pip install pydantic==2.11.7 email-validator==2.3.0
