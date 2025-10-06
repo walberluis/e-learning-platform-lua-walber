@@ -17,21 +17,53 @@ PROJECT_NAME="e-learning"
 PYTHON_VERSION="3.11"
 VENV_NAME=".venv"
 
+# Function to check if we can use colors
+can_use_colors() {
+    # Check if we're in a terminal and not in a pipe
+    if [ -t 1 ] && [ "${TERM:-}" != "dumb" ]; then
+        # Check if we're in Git Bash/MINGW64 and handle accordingly
+        if [[ "$OSTYPE" == "msys" ]] || [[ "$MSYSTEM" == "MINGW64" ]]; then
+            # Use simpler color handling for Git Bash
+            return 0
+        else
+            return 0
+        fi
+    else
+        return 1
+    fi
+}
+
 # Function to print colored output
 print_status() {
-    echo -e "${BLUE}[INFO]${NC} $1"
+    if can_use_colors; then
+        printf "${BLUE}[INFO]${NC} %s\n" "$1" >&2
+    else
+        printf "[INFO] %s\n" "$1" >&2
+    fi
 }
 
 print_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
+    if can_use_colors; then
+        printf "${GREEN}[SUCCESS]${NC} %s\n" "$1" >&2
+    else
+        printf "[SUCCESS] %s\n" "$1" >&2
+    fi
 }
 
 print_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
+    if can_use_colors; then
+        printf "${YELLOW}[WARNING]${NC} %s\n" "$1" >&2
+    else
+        printf "[WARNING] %s\n" "$1" >&2
+    fi
 }
 
 print_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
+    if can_use_colors; then
+        printf "${RED}[ERROR]${NC} %s\n" "$1" >&2
+    else
+        printf "[ERROR] %s\n" "$1" >&2
+    fi
 }
 
 # Function to check if command exists
@@ -129,7 +161,8 @@ check_python() {
         fi
     fi
     
-    echo $python_cmd
+    # Return the python command (this should be the only output)
+    echo "$python_cmd"
 }
 
 # Function to create virtual environment
@@ -138,12 +171,29 @@ create_virtual_environment() {
     print_status "Creating virtual environment..."
     
     if [ -d "$VENV_NAME" ]; then
-        print_warning "Virtual environment already exists. Removing old one..."
-        rm -rf "$VENV_NAME"
+        print_warning "Virtual environment already exists at: $VENV_NAME"
+        print_status "Removing existing virtual environment..."
+        
+        # Try to remove the existing virtual environment
+        if rm -rf "$VENV_NAME" 2>/dev/null; then
+            print_success "Existing virtual environment removed successfully"
+        else
+            print_error "Failed to remove existing virtual environment"
+            print_error "Please remove it manually: rm -rf $VENV_NAME"
+            exit 1
+        fi
     fi
     
-    $python_cmd -m venv "$VENV_NAME"
-    print_success "Virtual environment created: $VENV_NAME"
+    print_status "Creating new virtual environment with $python_cmd..."
+    
+    # Create virtual environment with explicit command execution
+    if ! "$python_cmd" -m venv "$VENV_NAME"; then
+        print_error "Failed to create virtual environment"
+        print_error "Please check if $python_cmd has venv module installed"
+        exit 1
+    fi
+    
+    print_success "Virtual environment created successfully: $VENV_NAME"
 }
 
 # Function to activate virtual environment
