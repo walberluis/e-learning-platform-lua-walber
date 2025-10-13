@@ -324,4 +324,21 @@ class TrilhaRepository(BaseRepository[Trilha]):
         except Exception as e:
             print(f"Error getting completion stats for trilha {trilha_id}: {e}")
             return {}
+    
+    async def get_by_criador(self, criador_id: int) -> List[Trilha]:
+        """
+        Get all trilhas created by a specific user.
+        
+        Args:
+            criador_id: ID of the user who created the trilhas
+            
+        Returns:
+            List of trilhas created by the user
+        """
+        try:
+            db = self.get_db()
+            return db.query(Trilha).filter(Trilha.criador_id == criador_id).order_by(Trilha.created_at.desc()).all()
+        except Exception as e:
+            print(f"Error getting trilhas by creator {criador_id}: {e}")
+            return []
 

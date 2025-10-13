@@ -50,10 +50,12 @@ class Trilha(Base):
     id = Column(Integer, primary_key=True, index=True)
     titulo = Column(String(200), nullable=False)
     dificuldade = Column(String(20), nullable=False)  # beginner, intermediate, advanced
+    criador_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True)  # User who created this trilha
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     # Relationships
+    criador = relationship("Usuario", foreign_keys=[criador_id])
     usuarios = relationship("Usuario", secondary=user_trilha_association, back_populates="trilhas")
     conteudos = relationship("Conteudo", back_populates="trilha")
     sessoes_quiz = relationship("SessaoQuiz", back_populates="trilha")

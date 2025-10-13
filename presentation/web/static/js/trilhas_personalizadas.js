@@ -411,8 +411,29 @@ function displayUserTrilhas(trilhas) {
     const trilhasGrid = document.getElementById('trilhasGrid');
     if (!trilhasGrid) return;
     
-    trilhasGrid.innerHTML = trilhas.map(trilha => `
-        <div class="trilha-card user-trilha" data-trilha-id="${trilha.id}">
+    // Check if there are no trilhas
+    if (!trilhas || trilhas.length === 0) {
+        trilhasGrid.innerHTML = `
+            <div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+                <i class="fas fa-book-open" style="font-size: 4rem; color: #6c63ff; margin-bottom: 1rem;"></i>
+                <h3>Nenhuma trilha disponível</h3>
+                <p>Novas trilhas serão adicionadas em breve!</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Map Portuguese difficulty to English for filter compatibility
+    const difficultyMap = {
+        'iniciante': 'beginner',
+        'intermediario': 'intermediate',
+        'avancado': 'advanced'
+    };
+    
+    trilhasGrid.innerHTML = trilhas.map(trilha => {
+        const englishDifficulty = difficultyMap[trilha.dificuldade] || trilha.dificuldade;
+        return `
+        <div class="trilha-card user-trilha" data-trilha-id="${trilha.id}" data-level="${englishDifficulty}">
             <div class="trilha-card-header">
                 <button class="trilha-delete-btn" onclick="showDeleteConfirmation(${trilha.id}, '${trilha.titulo.replace(/'/g, "\\'")}')">
                     <i class="fas fa-trash"></i>
@@ -450,7 +471,20 @@ function displayUserTrilhas(trilhas) {
                 </div>
             </div>
         </div>
-    `).join('');
+    `}).join('');
+    
+    // Apply the current active filter after displaying trilhas
+    applyActiveFilter();
+}
+
+// Apply the currently active filter
+function applyActiveFilter() {
+    const activeFilterBtn = document.querySelector('.filter-btn.active');
+    if (activeFilterBtn && window.filterTrilhas) {
+        const currentFilter = activeFilterBtn.dataset.filter;
+        console.log('Applying active filter:', currentFilter);
+        window.filterTrilhas(currentFilter);
+    }
 }
 
 // Start trilha (begin first module)
@@ -1892,6 +1926,10 @@ window.trilhasPersonalizadas = {
     init: initTrilhasPersonalizadas,
     checkStatus: checkUserTrilhaStatus,
     showCreateModal: showCreateTrilhaModal,
+    showUserTrilhas: showUserTrilhas,
     startTrilha: startTrilha,
     startQuizSession: startQuizSession
 };
+
+// Also export showUserTrilhas directly for easier access
+window.showUserTrilhas = showUserTrilhas;

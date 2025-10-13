@@ -11,8 +11,12 @@ from presentation.api.schemas.user_schemas import (
 )
 from lua_bridge.lua_engine import get_lua_engine
 from infrastructure.security.auth import get_current_user_token
+from business.core.usuario_manager import UsuarioManager
 
 router = APIRouter()
+
+# Initialize usuario manager
+usuario_manager = UsuarioManager()
 
 @router.post("/register", response_model=APIResponse, status_code=status.HTTP_201_CREATED)
 async def register_user(user_data: UserCreate):
@@ -273,11 +277,25 @@ async def get_user_analytics(
     
     analytics = await desempenho_repo.get_learning_analytics(user_id, days)
     
-    if not analytics:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found or no learning data available"
-        )
+    # If no analytics data, return default values instead of error
+    if not analytics or "message" in analytics:
+        analytics = {
+            "user_id": user_id,
+            "analysis_period_days": days,
+            "total_activities": 0,
+            "recent_activities": 0,
+            "completed_activities": 0,
+            "recent_completed": 0,
+            "completion_rate": 0,
+            "average_progress_all_time": 0,
+            "average_progress_recent": 0,
+            "average_grade_all_time": 0,
+            "average_grade_recent": 0,
+            "total_study_time_hours": 0,
+            "recent_study_time_hours": 0,
+            "daily_average_study_time": 0,
+            "learning_streak": 0
+        }
     
     return APIResponse(
         success=True,

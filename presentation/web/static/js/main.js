@@ -34,7 +34,8 @@ window.elearning = {
         localStorage.removeItem('elearning_user');
         localStorage.removeItem('elearning_token');
         this.updateUIForAuthState();
-        this.showSection('home');
+        // Redirect to trilhas instead of home after logout
+        this.showSection('trilhas');
     },
     
     // UI state management
@@ -43,6 +44,7 @@ window.elearning = {
         const registerBtn = document.getElementById('registerBtn');
         const navActions = document.querySelector('.nav-actions');
         const aiAssistantLink = document.querySelector('a[href="#chatbot"]');
+        const homeLink = document.querySelector('a[href="#home"]');
         
         // Show/hide AI Assistant link based on authentication
         if (aiAssistantLink) {
@@ -50,6 +52,15 @@ window.elearning = {
                 aiAssistantLink.style.display = 'inline-block';
             } else {
                 aiAssistantLink.style.display = 'none';
+            }
+        }
+        
+        // Show/hide Home link based on authentication
+        if (homeLink) {
+            if (this.isAuthenticated) {
+                homeLink.style.display = 'none';
+            } else {
+                homeLink.style.display = 'inline-block';
             }
         }
         
@@ -142,9 +153,7 @@ window.elearning = {
                 }
                 // Check trilhas personalizadas status if user is logged in
                 if (this.isAuthenticated && window.trilhasPersonalizadas?.checkStatus) {
-                    setTimeout(() => {
-                        window.trilhasPersonalizadas.checkStatus();
-                    }, 500);
+                    window.trilhasPersonalizadas.checkStatus();
                 }
                 break;
             case 'dashboard':
@@ -268,10 +277,9 @@ async function handleRegister(event) {
     const email = document.getElementById('registerEmail').value;
     const password = document.getElementById('registerPassword').value;
     const confirmPassword = document.getElementById('registerConfirmPassword').value;
-    const profile = document.getElementById('registerProfile').value;
     
     // Validation
-    if (!name || !email || !password || !confirmPassword || !profile) {
+    if (!name || !email || !password || !confirmPassword) {
         showNotification('Por favor, preencha todos os campos', 'error');
         return;
     }
@@ -293,7 +301,7 @@ async function handleRegister(event) {
             nome: name,
             email: email,
             senha: password,
-            perfil_aprendizado: profile
+            perfil_aprendizado: 'beginner' // Define como iniciante por padrão
         };
         
         const response = await UserAPI.register(userData);
@@ -391,6 +399,20 @@ async function loadTrilhas() {
             </div>
         `;
         
+        // If user is authenticated, load their personalized trilhas
+        if (window.elearning?.isAuthenticated) {
+            const currentUser = window.elearning.getCurrentUser();
+            if (currentUser && window.trilhasPersonalizadas?.showUserTrilhas) {
+                console.log('Loading personalized trilhas for authenticated user');
+                // Call the function that loads and displays user trilhas
+                if (typeof showUserTrilhas === 'function') {
+                    await showUserTrilhas();
+                    return;
+                }
+            }
+        }
+        
+        // Fallback: load standard trilhas from API
         const trilhas = await TrilhaAPI.getAll();
         
         if (trilhas && trilhas.length > 0) {
@@ -466,6 +488,7 @@ async function startTrilha(trilhaId) {
 
 // Filter trilhas
 function filterTrilhas(level) {
+    const trilhasGrid = document.getElementById('trilhasGrid');
     const trilhaCards = document.querySelectorAll('.trilha-card');
     const filterBtns = document.querySelectorAll('.filter-btn');
     
@@ -477,14 +500,42 @@ function filterTrilhas(level) {
         }
     });
     
+    // Remove any existing empty state message
+    const existingEmptyState = trilhasGrid?.querySelector('.filter-empty-state');
+    if (existingEmptyState) {
+        existingEmptyState.remove();
+    }
+    
     // Filter cards
+    let visibleCount = 0;
     trilhaCards.forEach(card => {
         if (level === 'all' || card.dataset.level === level) {
             card.style.display = 'block';
+            visibleCount++;
         } else {
             card.style.display = 'none';
         }
     });
+    
+    // Show message if no cards are visible and there are cards (not the initial empty state)
+    if (visibleCount === 0 && trilhaCards.length > 0) {
+        const levelLabels = {
+            'beginner': 'iniciante',
+            'intermediate': 'intermediário',
+            'advanced': 'avançado'
+        };
+        const levelLabel = levelLabels[level] || level;
+        
+        const emptyMessage = document.createElement('div');
+        emptyMessage.className = 'filter-empty-state';
+        emptyMessage.style.cssText = 'grid-column: 1 / -1; text-align: center; padding: 3rem;';
+        emptyMessage.innerHTML = `
+            <i class="fas fa-filter" style="font-size: 3rem; color: #6c63ff; margin-bottom: 1rem; opacity: 0.5;"></i>
+            <h3>Nenhuma trilha de nível ${levelLabel}</h3>
+            <p>Tente criar uma nova trilha ou selecione outro filtro.</p>
+        `;
+        trilhasGrid?.appendChild(emptyMessage);
+    }
 }
 
 // Initialize application
@@ -575,7 +626,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Load initial section data
-    window.elearning.loadSectionData('trilhas');
+    // If user is authenticated, show dashboard; otherwise show trilhas
+    if (window.elearning.isAuthenticated) {
+        window.elearning.showSection('trilhas');
+    } else {
+        window.elearning.loadSectionData('trilhas');
+    }
     
     // Update UI for current auth state
     window.elearning.updateUIForAuthState();

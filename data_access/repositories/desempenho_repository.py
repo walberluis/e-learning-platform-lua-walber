@@ -294,17 +294,27 @@ class DesempenhoRepository(BaseRepository[Desempenho]):
             if not activity_dates:
                 return 0
             
-            streak = 0
-            current_date = datetime.utcnow().date()
+            # Convert to list of dates for easier manipulation
+            dates_list = [activity_date_tuple[0] for activity_date_tuple in activity_dates]
             
-            for activity_date_tuple in activity_dates:
-                activity_date = activity_date_tuple[0]
-                
-                # Check if this date is consecutive
-                if activity_date == current_date or activity_date == current_date - timedelta(days=streak):
+            today = datetime.utcnow().date()
+            streak = 0
+            
+            # Check if there's activity today or yesterday (streak is still valid)
+            most_recent_date = dates_list[0]
+            if most_recent_date < today - timedelta(days=1):
+                # No activity today or yesterday, streak is broken
+                return 0
+            
+            # Count consecutive days starting from today or yesterday
+            expected_date = today if most_recent_date == today else today - timedelta(days=1)
+            
+            for activity_date in dates_list:
+                if activity_date == expected_date:
                     streak += 1
-                    current_date = activity_date
-                else:
+                    expected_date = expected_date - timedelta(days=1)
+                elif activity_date < expected_date:
+                    # There's a gap in the streak
                     break
             
             return streak

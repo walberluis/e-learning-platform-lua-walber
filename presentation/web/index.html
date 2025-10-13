@@ -164,8 +164,10 @@
                         Acompanhe seu progresso e estatísticas de aprendizado
                     </p>
                 </div>
+                
+                <!-- Stats Overview -->
                 <div class="dashboard-grid">
-                    <div class="dashboard-card">
+                    <div class="dashboard-card gradient-card">
                         <div class="card-header">
                             <h3>Progresso Geral</h3>
                             <i class="fas fa-chart-pie"></i>
@@ -173,13 +175,15 @@
                         <div class="progress-circle">
                             <div class="progress-value" id="overallProgress">0%</div>
                         </div>
+                        <p class="stat-subtitle">Continue praticando!</p>
                     </div>
                     <div class="dashboard-card">
                         <div class="card-header">
-                            <h3>Trilhas Ativas</h3>
-                            <i class="fas fa-book-open"></i>
+                            <h3>Trilhas Criadas</h3>
+                            <i class="fas fa-route"></i>
                         </div>
-                        <div class="stat-value" id="activeTrilhas">0</div>
+                        <div class="stat-value" id="createdTrilhas">0</div>
+                        <p class="stat-subtitle">Trilhas personalizadas</p>
                     </div>
                     <div class="dashboard-card">
                         <div class="card-header">
@@ -187,16 +191,50 @@
                             <i class="fas fa-clock"></i>
                         </div>
                         <div class="stat-value" id="studyTime">0h</div>
+                        <p class="stat-subtitle">Tempo total investido</p>
                     </div>
-                    <div class="dashboard-card">
+                    <div class="dashboard-card highlight-card">
                         <div class="card-header">
                             <h3>Sequência de Dias</h3>
                             <i class="fas fa-fire"></i>
                         </div>
                         <div class="stat-value" id="learningStreak">0</div>
+                        <p class="stat-subtitle">Dias consecutivos</p>
                     </div>
                 </div>
-                <div class="recommendations-section">
+                
+                <!-- Quick Actions -->
+                <div class="quick-actions-section">
+                    <h3>Ações Rápidas</h3>
+                    <div class="quick-actions-grid">
+                        <button class="action-card" onclick="window.elearning.showSection('trilhas')">
+                            <i class="fas fa-plus-circle"></i>
+                            <span>Criar Nova Trilha</span>
+                        </button>
+                        <button class="action-card" onclick="window.elearning.showSection('trilhas')">
+                            <i class="fas fa-play-circle"></i>
+                            <span>Continuar Aprendendo</span>
+                        </button>
+                        <button class="action-card" onclick="window.elearning.showSection('chatbot')">
+                            <i class="fas fa-comments"></i>
+                            <span>Falar com IA</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Recent Activity -->
+                <div class="recent-activity-section" id="recentActivitySection">
+                    <h3>Atividade Recente</h3>
+                    <div id="recentActivityList" class="activity-list">
+                        <div class="empty-state">
+                            <i class="fas fa-history"></i>
+                            <p>Nenhuma atividade recente</p>
+                            <p class="small-text">Crie sua primeira trilha para começar!</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="recommendations-section" style="display: none;">
                     <h3>Recomendações Personalizadas</h3>
                     <div class="recommendations-grid" id="recommendationsGrid">
                         <!-- Recommendations will be loaded dynamically -->
@@ -297,15 +335,6 @@
                     <div class="form-group">
                         <label for="registerConfirmPassword">Confirmar Senha</label>
                         <input type="password" id="registerConfirmPassword" required minlength="6" placeholder="Digite a senha novamente">
-                    </div>
-                    <div class="form-group">
-                        <label for="registerProfile">Nível de Conhecimento</label>
-                        <select id="registerProfile" required>
-                            <option value="">Selecione seu nível</option>
-                            <option value="beginner">Iniciante</option>
-                            <option value="intermediate">Intermediário</option>
-                            <option value="advanced">Avançado</option>
-                        </select>
                     </div>
                     <button type="submit" class="btn btn-primary btn-full">Criar Conta</button>
                 </form>

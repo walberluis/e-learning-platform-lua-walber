@@ -42,9 +42,6 @@ async function loadDashboardData() {
     if (!currentUser) return;
     
     try {
-        // Show loading state
-        showDashboardLoading(true);
-        
         // Load user profile with progress
         const profilePromise = UserAPI.getProfile(currentUser.id);
         
@@ -62,27 +59,49 @@ async function loadDashboardData() {
         
         // Wait for all data
         const [profileResponse, analyticsResponse, recommendationsResponse, learningPathResponse, customTrilhasResponse] = 
-            await Promise.all([profilePromise, analyticsPromise, recommendationsPromise, learningPathPromise, customTrilhasPromise]);
+            await Promise.all([
+                profilePromise.catch(err => { console.error('Profile error:', err); return { success: false, data: {} }; }),
+                analyticsPromise.catch(err => { console.error('Analytics error:', err); return { success: false, data: {} }; }),
+                recommendationsPromise.catch(err => { console.error('Recommendations error:', err); return { success: false, data: {} }; }),
+                learningPathPromise.catch(err => { console.error('Learning path error:', err); return { success: false, data: {} }; }),
+                customTrilhasPromise.catch(err => { console.error('Custom trilhas error:', err); return { success: false, data: {} }; })
+            ]);
+        
+        console.log('Dashboard data loaded:', {
+            profile: profileResponse,
+            analytics: analyticsResponse,
+            recommendations: recommendationsResponse,
+            learningPath: learningPathResponse,
+            customTrilhas: customTrilhasResponse
+        });
         
         // Update dashboard with loaded data
-        if (profileResponse.success) {
+        if (profileResponse && profileResponse.success) {
             updateProfileSection(profileResponse.data);
         }
         
-        if (analyticsResponse.success) {
+        if (analyticsResponse && analyticsResponse.success) {
             updateAnalyticsSection(analyticsResponse.data);
+        } else {
+            console.warn('Analytics response not successful:', analyticsResponse);
         }
         
-        if (recommendationsResponse.success) {
+        if (recommendationsResponse && recommendationsResponse.success) {
             updateRecommendationsSection(recommendationsResponse.data);
         }
         
-        if (learningPathResponse.success) {
+        if (learningPathResponse && learningPathResponse.success) {
             updateLearningPathSection(learningPathResponse.data);
         }
         
-        if (customTrilhasResponse.success) {
+        if (customTrilhasResponse && customTrilhasResponse.success) {
             updateCustomTrilhasSection(customTrilhasResponse.data);
+            // Update created trilhas count
+            updateStatCard('createdTrilhas', customTrilhasResponse.data?.trilhas?.length || 0);
+            // Update recent activity
+            updateRecentActivity(customTrilhasResponse.data?.trilhas || []);
+        } else {
+            updateStatCard('createdTrilhas', 0);
         }
         
         // Store dashboard data
@@ -97,8 +116,6 @@ async function loadDashboardData() {
     } catch (error) {
         console.error('Error loading dashboard data:', error);
         showDashboardError('Erro ao carregar dados do dashboard');
-    } finally {
-        showDashboardLoading(false);
     }
 }
 
@@ -129,17 +146,20 @@ function updateProfileSection(profileData) {
 
 // Update analytics section
 function updateAnalyticsSection(analyticsData) {
+    console.log('Updating analytics section with data:', analyticsData);
+    
     // Update main stats
     updateStatCard('overallProgress', `${analyticsData.completion_rate || 0}%`);
-    updateStatCard('activeTrilhas', analyticsData.total_activities || 0);
     updateStatCard('studyTime', `${analyticsData.total_study_time_hours || 0}h`);
-    updateStatCard('learningStreak', `${analyticsData.learning_streak || 0} dias`);
+    updateStatCard('learningStreak', analyticsData.learning_streak || 0);
     
     // Update progress circle
     updateProgressCircle(analyticsData.completion_rate || 0);
     
-    // Update detailed analytics
-    updateDetailedAnalytics(analyticsData);
+    // Update detailed analytics if function exists
+    if (typeof updateDetailedAnalytics === 'function') {
+        updateDetailedAnalytics(analyticsData);
+    }
 }
 
 // Update stat card
@@ -147,12 +167,6 @@ function updateStatCard(elementId, value) {
     const element = document.getElementById(elementId);
     if (element) {
         element.textContent = value;
-        
-        // Add animation
-        element.style.transform = 'scale(1.1)';
-        setTimeout(() => {
-            element.style.transform = 'scale(1)';
-        }, 200);
     }
 }
 
@@ -434,6 +448,74 @@ async function loadUserCustomTrilhas(userId) {
     }
 }
 
+// Update recent activity
+function updateRecentActivity(trilhas) {
+    const activityList = document.getElementById('recentActivityList');
+    if (!activityList) return;
+    
+    if (!trilhas || trilhas.length === 0) {
+        activityList.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-history"></i>
+                <p>Nenhuma atividade recente</p>
+                <p class="small-text">Crie sua primeira trilha para começar!</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Show the 5 most recent trilhas
+    const recentTrilhas = trilhas.slice(0, 5);
+    
+    activityList.innerHTML = recentTrilhas.map(trilha => {
+        const difficultyLabels = {
+            'iniciante': 'Nível Iniciante',
+            'intermediario': 'Nível Intermediário',
+            'avancado': 'Nível Avançado',
+            'beginner': 'Nível Iniciante',
+            'intermediate': 'Nível Intermediário',
+            'advanced': 'Nível Avançado'
+        };
+        
+        const difficultyLabel = difficultyLabels[trilha.dificuldade] || trilha.dificuldade;
+        
+        // Calculate time ago
+        let timeAgo = 'Hoje';
+        if (trilha.created_at) {
+            const createdDate = new Date(trilha.created_at);
+            const now = new Date();
+            const diffDays = Math.floor((now - createdDate) / (1000 * 60 * 60 * 24));
+            
+            if (diffDays === 0) {
+                timeAgo = 'Hoje';
+            } else if (diffDays === 1) {
+                timeAgo = 'Ontem';
+            } else if (diffDays < 7) {
+                timeAgo = `${diffDays} dias atrás`;
+            } else if (diffDays < 30) {
+                const weeks = Math.floor(diffDays / 7);
+                timeAgo = `${weeks} ${weeks === 1 ? 'semana' : 'semanas'} atrás`;
+            } else {
+                const months = Math.floor(diffDays / 30);
+                timeAgo = `${months} ${months === 1 ? 'mês' : 'meses'} atrás`;
+            }
+        }
+        
+        return `
+            <div class="activity-item">
+                <div class="activity-icon">
+                    <i class="fas fa-plus"></i>
+                </div>
+                <div class="activity-content">
+                    <p class="activity-title">${trilha.titulo}</p>
+                    <p class="activity-description">${difficultyLabel} • ${trilha.modules_count || 0} módulos</p>
+                </div>
+                <div class="activity-time">${timeAgo}</div>
+            </div>
+        `;
+    }).join('');
+}
+
 // Update custom trilhas section
 function updateCustomTrilhasSection(customTrilhasData) {
     // Add custom trilhas card to dashboard if it doesn't exist
@@ -578,12 +660,10 @@ async function generateProgressReport() {
 document.addEventListener('DOMContentLoaded', function() {
     // Only initialize if we're on the dashboard section
     if (document.getElementById('dashboard')) {
-        // Wait for user to be loaded
-        setTimeout(() => {
-            if (window.elearning?.currentUser()) {
-                initDashboard();
-            }
-        }, 1000);
+        // Initialize immediately
+        if (window.elearning?.getCurrentUser()) {
+            initDashboard();
+        }
     }
 });
 

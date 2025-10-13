@@ -14,12 +14,6 @@ import asyncio
 
 router = APIRouter()
 
-# Variável global para simular trilhas criadas dinamicamente
-created_trilhas_cache = []
-
-# Variável global para trilhas excluídas (incluindo trilhas base)
-deleted_trilhas_ids = []
-
 @router.post("/quiz/generate", response_model=APIResponse)
 async def generate_quiz_questions(request: dict):
     """
@@ -353,22 +347,36 @@ async def create_trilha_personalizada(request: TrilhaPersonalizadaRequest):
     4. Inscrever automaticamente o usuário na trilha
     """
     try:
-        # Por enquanto, usar implementação mock para testar a interface
-        # TODO: Implementar integração completa com Lua e IA quando estiver pronto
+        from data_access.repositories.trilha_repository import TrilhaRepository
+        from data_access.repositories.usuario_repository import UsuarioRepository
         
-        # Simular delay de processamento
-        import asyncio
-        import time
-        await asyncio.sleep(2)
+        trilha_repo = TrilhaRepository()
+        usuario_repo = UsuarioRepository()
+        
+        # Verificar se o usuário existe
+        usuario = await usuario_repo.get_by_id(request.user_id)
+        if not usuario:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Usuário não encontrado"
+            )
         
         # Timestamp atual
+        import time
         current_time = time.strftime("%Y-%m-%dT%H:%M:%SZ")
         
-        # Gerar estrutura mock da trilha
+        # Gerar estrutura da trilha
         difficulty_labels = {
             "iniciante": "Fundamentos",
             "intermediario": "Intermediário",
             "avancado": "Avançado"
+        }
+        
+        # Map difficulty to database format
+        difficulty_map = {
+            "iniciante": "beginner",
+            "intermediario": "intermediate",
+            "avancado": "advanced"
         }
         
         modules_count = {
@@ -447,22 +455,59 @@ Responda APENAS o título melhorado:"""
         trilha_title = f"{improved_topic} - {difficulty_labels.get(request.difficulty, 'Básico')}"
         print(f"Título final: {trilha_title}")
         
-        import random
-        trilha_id = random.randint(1000, 9999)  # ID único
+        # Criar trilha no banco de dados
+        db_difficulty = difficulty_map.get(request.difficulty, "beginner")
+        trilha_db_data = {
+            "titulo": trilha_title,
+            "dificuldade": db_difficulty,
+            "criador_id": request.user_id  # Associar ao usuário criador
+        }
         
-        # Criar módulos mock
+        trilha = await trilha_repo.create(trilha_db_data)
+        if not trilha:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Falha ao criar trilha no banco de dados"
+            )
+        
+        trilha_id = trilha.id
+        
+        # Criar módulos como conteúdos
         modules = []
         for i in range(modules_count.get(request.difficulty, 3)):
-            module = {
-                "id": 100 + i,
-                "titulo": f"Módulo {i+1}: {request.topic}",
-                "descricao": f"Aprenda os conceitos do módulo {i+1}",
+            conteudo_data = {
+                "titulo": f"Módulo {i+1}: {improved_topic}",
+                "tipo": "quiz",
+                "material": f"Aprenda os conceitos do módulo {i+1}"
+            }
+            conteudo = await trilha_repo.add_conteudo_to_trilha(trilha_id, conteudo_data)
+            if conteudo:
+                modules.append({
+                    "id": conteudo.id,
+                    "titulo": conteudo.titulo,
+                    "descricao": conteudo.material,
                 "ordem": i + 1,
                 "questions_count": 10
-            }
-            modules.append(module)
+                })
         
-        # Simular criação da trilha
+        # Inscrever o usuário na trilha automaticamente
+        from business.learning.content_delivery import ContentDelivery
+        content_delivery = ContentDelivery()
+        enrollment_result = await content_delivery.enroll_user_in_trilha(request.user_id, trilha_id)
+        
+        # Registrar atividade inicial para contar o streak
+        if modules and len(modules) > 0:
+            from data_access.repositories.desempenho_repository import DesempenhoRepository
+            desempenho_repo = DesempenhoRepository()
+            # Registrar progresso inicial no primeiro módulo (5% para indicar que começou)
+            await desempenho_repo.update_progress(
+                user_id=request.user_id,
+                conteudo_id=modules[0]["id"],
+                progresso=5,
+                tempo_estudo=1  # 1 minuto inicial
+            )
+        
+        # Preparar dados da trilha criada
         trilha_data = {
             "id": trilha_id,
             "titulo": trilha_title,
@@ -472,27 +517,11 @@ Responda APENAS o título melhorado:"""
             "modules": modules,
             "estimated_duration": len(modules) * 30,
             "total_questions": len(modules) * 10,
-            "enrollment": {
-                "success": True,
-                "enrollment_id": 888,
-                "enrolled_at": "2024-01-01T00:00:00Z"
+            "enrollment": enrollment_result if enrollment_result.get("success") else {
+                "success": False,
+                "error": "Falha ao inscrever usuário"
             }
         }
-        
-        # Adicionar ao cache de trilhas criadas (para aparecer na lista)
-        global created_trilhas_cache
-        trilha_for_list = {
-            "id": trilha_id,
-            "titulo": trilha_title,
-            "descricao": f"Trilha personalizada sobre {request.topic} para nível {request.difficulty}",
-            "dificuldade": request.difficulty,
-            "categoria": "programming",
-            "modules_count": len(modules),
-            "enrollment_count": 1,
-            "completion_rate": 0,
-            "created_at": current_time
-        }
-        created_trilhas_cache.append(trilha_for_list)
         
         return APIResponse(
             success=True,
@@ -517,21 +546,50 @@ async def check_user_active_trilhas(user_id: int):
     mostrar opção "criar nova trilha" ou "continuar trilha existente".
     """
     try:
-        # Por enquanto, retornar dados mock para testar a interface
-        # TODO: Implementar integração completa com Lua quando o bridge estiver pronto
+        from data_access.repositories.trilha_repository import TrilhaRepository
+        from data_access.repositories.usuario_repository import UsuarioRepository
+        from data_access.repositories.desempenho_repository import DesempenhoRepository
         
-        # Simular verificação de trilhas ativas
+        trilha_repo = TrilhaRepository()
+        usuario_repo = UsuarioRepository()
+        desempenho_repo = DesempenhoRepository()
+        
+        # Verificar se o usuário existe
+        usuario = await usuario_repo.get_by_id(user_id)
+        if not usuario:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Usuário não encontrado"
+            )
+        
+        # Buscar trilhas onde o usuário está inscrito
+        usuario_with_trilhas = await usuario_repo.get_with_trilhas(user_id)
+        
+        # Map difficulty to Portuguese
+        difficulty_map = {
+            "beginner": "iniciante",
+            "intermediate": "intermediario",
+            "advanced": "avancado"
+        }
+        
+        active_trilhas = []
+        if usuario_with_trilhas and usuario_with_trilhas.trilhas:
+            for trilha in usuario_with_trilhas.trilhas:
+                # Calcular progresso da trilha
+                progress_data = await desempenho_repo.get_user_trilha_progress(user_id, trilha.id)
+                progress = progress_data.get("overall_progress", 0) if progress_data else 0
+                
+                active_trilhas.append({
+                    "id": trilha.id,
+                    "titulo": trilha.titulo,
+                    "progress": progress
+                })
+        
         result = {
             "success": True,
-            "has_active_trilhas": True,  # Mudando para true para mostrar ambos os botões
-            "active_trilhas": [
-                {
-                    "id": 999,
-                    "titulo": "Python básico - Fundamentos",
-                    "progress": 0
-                }
-            ],
-            "count": 1
+            "has_active_trilhas": len(active_trilhas) > 0,
+            "active_trilhas": active_trilhas,
+            "count": len(active_trilhas)
         }
         
         return APIResponse(
@@ -539,7 +597,10 @@ async def check_user_active_trilhas(user_id: int):
             data=result
         )
         
+    except HTTPException:
+        raise
     except Exception as e:
+        print(f"Error checking user active trilhas: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Internal server error: {str(e)}"
@@ -551,67 +612,35 @@ async def get_trilha_details(trilha_id: int):
     Get detailed information about a specific trilha.
     """
     try:
-        # Por enquanto, buscar na lista de trilhas criadas
-        global created_trilhas_cache
+        from data_access.repositories.trilha_repository import TrilhaRepository
         
-        # Buscar nas trilhas base + cache
-        import time
-        current_time = time.strftime("%Y-%m-%dT%H:%M:%SZ")
+        trilha_repo = TrilhaRepository()
         
-        trilhas_base = [
-            {
-                "id": 999,
-                "titulo": "Python básico - Fundamentos",
-                "descricao": "Trilha personalizada sobre Python básico para nível iniciante",
-                "dificuldade": "beginner",
-                "categoria": "programming",
-                "modules_count": 3,
-                "enrollment_count": 1,
-                "completion_rate": 0,
-                "created_at": "2024-01-01T00:00:00Z"
-            },
-            {
-                "id": 998,
-                "titulo": "JavaScript avançado - Avançado",
-                "descricao": "Trilha personalizada sobre JavaScript avançado para nível avançado",
-                "dificuldade": "advanced",
-                "categoria": "programming",
-                "modules_count": 5,
-                "enrollment_count": 1,
-                "completion_rate": 20,
-                "created_at": "2024-01-01T00:00:00Z"
-            },
-            {
-                "id": 997,
-                "titulo": "Trilha Recém-Criada - Fundamentos",
-                "descricao": "Esta trilha foi criada recentemente para demonstrar a funcionalidade",
-                "dificuldade": "beginner",
-                "categoria": "programming",
-                "modules_count": 3,
-                "enrollment_count": 1,
-                "completion_rate": 0,
-                "created_at": current_time
-            }
-        ]
-        
-        # Filtrar trilhas excluídas
-        global deleted_trilhas_ids
-        available_base_trilhas = [trilha for trilha in trilhas_base if trilha["id"] not in deleted_trilhas_ids]
-        all_trilhas = available_base_trilhas + created_trilhas_cache
-        
-        # Buscar trilha específica
-        trilha = next((t for t in all_trilhas if t["id"] == trilha_id), None)
-        
+        # Buscar trilha no banco de dados
+        trilha = await trilha_repo.get_by_id(trilha_id)
         if not trilha:
             raise HTTPException(status_code=404, detail="Trilha não encontrada")
         
-        # Gerar módulos detalhados para a trilha
+        # Buscar trilha com conteúdos
+        trilha_with_content = await trilha_repo.get_with_conteudos(trilha_id)
+        trilha_with_users = await trilha_repo.get_with_usuarios(trilha_id)
+        trilha_stats = await trilha_repo.get_trilha_statistics(trilha_id)
+        
+        # Map difficulty to Portuguese
+        difficulty_map = {
+            "beginner": "iniciante",
+            "intermediate": "intermediario",
+            "advanced": "avancado"
+        }
+        
+        # Preparar módulos
         modules = []
-        for i in range(trilha["modules_count"]):
-            module = {
-                "id": trilha_id * 100 + i + 1,
-                "titulo": f"Módulo {i+1}: {trilha['titulo'].split(' - ')[0]}",
-                "descricao": f"Aprenda os conceitos fundamentais do módulo {i+1}",
+        if trilha_with_content:
+            for i, conteudo in enumerate(trilha_with_content.conteudos):
+                module = {
+                    "id": conteudo.id,
+                    "titulo": conteudo.titulo,
+                    "descricao": conteudo.material or f"Aprenda os conceitos fundamentais do módulo {i+1}",
                 "ordem": i + 1,
                 "questions_count": 10,
                 "estimated_duration": 15
@@ -620,13 +649,21 @@ async def get_trilha_details(trilha_id: int):
         
         # Dados detalhados da trilha
         detailed_trilha = {
-            **trilha,
+            "id": trilha.id,
+            "titulo": trilha.titulo,
+            "descricao": f"Trilha personalizada criada",
+            "dificuldade": difficulty_map.get(trilha.dificuldade, trilha.dificuldade),
+            "categoria": "programming",
+            "modules_count": len(modules),
+            "enrollment_count": len(trilha_with_users.usuarios) if trilha_with_users else 0,
+            "completion_rate": trilha_stats.get("completion_rate", 0) if trilha_stats else 0,
+            "created_at": trilha.created_at.isoformat() if trilha.created_at else None,
             "modules": modules,
             "estimated_duration": len(modules) * 15,
             "total_questions": len(modules) * 10,
             "enrollment": {
-                "enrollment_count": trilha.get("enrollment_count", 0),
-                "completion_rate": trilha.get("completion_rate", 0)
+                "enrollment_count": len(trilha_with_users.usuarios) if trilha_with_users else 0,
+                "completion_rate": trilha_stats.get("completion_rate", 0) if trilha_stats else 0
             }
         }
         
@@ -648,34 +685,25 @@ async def delete_trilha(trilha_id: int):
     Delete a specific trilha.
     """
     try:
-        # Por enquanto, remover da lista de trilhas criadas
-        global created_trilhas_cache
+        from data_access.repositories.trilha_repository import TrilhaRepository
         
-        # Buscar trilha no cache
-        trilha_found = False
-        for i, trilha in enumerate(created_trilhas_cache):
-            if trilha["id"] == trilha_id:
-                created_trilhas_cache.pop(i)
-                trilha_found = True
-                break
+        trilha_repo = TrilhaRepository()
         
-        if not trilha_found:
-            # Verificar se é uma trilha base ou extra
-            base_trilha_ids = [999, 998, 997]
-            extra_trilha_ids = [990, 991, 992, 993, 994]  # IDs das trilhas extras
-            all_system_trilhas = base_trilha_ids + extra_trilha_ids
-            
-            if trilha_id in all_system_trilhas:
-                # Permitir exclusão de trilhas do sistema - adicionar à lista de excluídas
-                global deleted_trilhas_ids
-                if trilha_id not in deleted_trilhas_ids:
-                    deleted_trilhas_ids.append(trilha_id)
-                print(f"Trilha do sistema {trilha_id} foi marcada como excluída")
-                trilha_found = True
-            else:
+        # Verificar se a trilha existe
+        trilha = await trilha_repo.get_by_id(trilha_id)
+        if not trilha:
                 raise HTTPException(
                     status_code=404, 
                     detail="Trilha não encontrada"
+                )
+        
+        # Deletar a trilha do banco de dados
+        deleted = await trilha_repo.delete(trilha_id)
+        
+        if not deleted:
+            raise HTTPException(
+                status_code=500,
+                detail="Falha ao excluir trilha"
                 )
         
         return APIResponse(
@@ -700,103 +728,64 @@ async def get_user_created_trilhas(user_id: int):
     Retorna todas as trilhas personalizadas criadas pelo usuário.
     """
     try:
-        # Por enquanto, retornar trilhas mock para testar a interface
-        # TODO: Implementar busca real no banco de dados
+        from data_access.repositories.trilha_repository import TrilhaRepository
+        from data_access.repositories.usuario_repository import UsuarioRepository
+        from data_access.repositories.desempenho_repository import DesempenhoRepository
         
-        # Simular trilhas base + trilhas criadas dinamicamente
-        import time
-        import random
-        current_time = time.strftime("%Y-%m-%dT%H:%M:%SZ")
+        trilha_repo = TrilhaRepository()
+        usuario_repo = UsuarioRepository()
+        desempenho_repo = DesempenhoRepository()
         
-        # Trilhas base (sempre presentes)
-        trilhas_base = [
-            {
-                "id": 999,
-                "titulo": "Python básico - Fundamentos",
-                "descricao": "Trilha personalizada sobre Python básico para nível iniciante",
-                "dificuldade": "beginner",
+        # Verificar se o usuário existe
+        usuario = await usuario_repo.get_by_id(user_id)
+        if not usuario:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Usuário não encontrado"
+            )
+        
+        # Buscar trilhas criadas pelo usuário
+        trilhas = await trilha_repo.get_by_criador(user_id)
+        
+        # Map difficulty to Portuguese labels
+        difficulty_map = {
+            "beginner": "iniciante",
+            "intermediate": "intermediario",
+            "advanced": "avancado"
+        }
+        
+        # Preparar lista de trilhas com informações adicionais
+        trilhas_list = []
+        for trilha in trilhas:
+            # Contar módulos (conteúdos)
+            trilha_with_content = await trilha_repo.get_with_conteudos(trilha.id)
+            modules_count = len(trilha_with_content.conteudos) if trilha_with_content else 0
+            
+            # Contar inscrições
+            trilha_with_users = await trilha_repo.get_with_usuarios(trilha.id)
+            enrollment_count = len(trilha_with_users.usuarios) if trilha_with_users else 0
+            
+            # Calcular taxa de conclusão (simplificado)
+            trilha_stats = await trilha_repo.get_trilha_statistics(trilha.id)
+            completion_rate = trilha_stats.get("completion_rate", 0) if trilha_stats else 0
+            
+            trilha_data = {
+                "id": trilha.id,
+                "titulo": trilha.titulo,
+                "descricao": f"Trilha personalizada criada por você",
+                "dificuldade": difficulty_map.get(trilha.dificuldade, trilha.dificuldade),
                 "categoria": "programming",
-                "modules_count": 3,
-                "enrollment_count": 1,
-                "completion_rate": 0,
-                "created_at": "2024-01-01T00:00:00Z"
-            },
-            {
-                "id": 998,
-                "titulo": "JavaScript avançado - Avançado",
-                "descricao": "Trilha personalizada sobre JavaScript avançado para nível avançado",
-                "dificuldade": "advanced",
-                "categoria": "programming",
-                "modules_count": 5,
-                "enrollment_count": 1,
-                "completion_rate": 20,
-                "created_at": "2024-01-01T00:00:00Z"
-            },
-            {
-                "id": 997,
-                "titulo": "Trilha Recém-Criada - Fundamentos",
-                "descricao": "Esta trilha foi criada recentemente para demonstrar a funcionalidade",
-                "dificuldade": "beginner",
-                "categoria": "programming",
-                "modules_count": 3,
-                "enrollment_count": 1,
-                "completion_rate": 0,
-                "created_at": current_time
+                "modules_count": modules_count,
+                "enrollment_count": enrollment_count,
+                "completion_rate": completion_rate,
+                "created_at": trilha.created_at.isoformat() if trilha.created_at else None
             }
-        ]
-        
-        # Simular trilhas criadas recentemente (baseado no timestamp para variar)
-        import hashlib
-        user_seed = str(user_id) + str(int(time.time() // 300))  # Muda a cada 5 minutos
-        hash_obj = hashlib.md5(user_seed.encode())
-        random.seed(int(hash_obj.hexdigest()[:8], 16))
-        
-        trilhas_extras = []
-        num_extras = random.randint(0, 3)  # 0 a 3 trilhas extras
-        
-        temas_exemplo = [
-            ("React Hooks", "intermediario", "web_development"),
-            ("Machine Learning", "avancado", "data_science"),
-            ("Node.js APIs", "intermediario", "programming"),
-            ("CSS Grid", "iniciante", "web_development"),
-            ("Docker Básico", "intermediario", "devops"),
-            ("Vue.js", "iniciante", "web_development")
-        ]
-        
-        for i in range(num_extras):
-            if i < len(temas_exemplo):
-                tema, dif, cat = temas_exemplo[i]
-                difficulty_labels = {
-                    "iniciante": "Fundamentos",
-                    "intermediario": "Intermediário",
-                    "avancado": "Avançado"
-                }
-                modules_count = {"iniciante": 3, "intermediario": 4, "avancado": 5}
-                
-                trilha_extra = {
-                    "id": 990 + i,
-                    "titulo": f"{tema} - {difficulty_labels[dif]}",
-                    "descricao": f"Trilha personalizada sobre {tema} para nível {dif}",
-                    "dificuldade": dif,
-                    "categoria": cat,
-                    "modules_count": modules_count[dif],
-                    "enrollment_count": 1,
-                    "completion_rate": random.randint(0, 30),
-                    "created_at": current_time
-                }
-                trilhas_extras.append(trilha_extra)
-        
-        # Combinar trilhas base + extras + trilhas criadas dinamicamente
-        global created_trilhas_cache, deleted_trilhas_ids
-        all_trilhas = trilhas_base + trilhas_extras + created_trilhas_cache
-        
-        # Filtrar trilhas excluídas
-        trilhas_mock = [trilha for trilha in all_trilhas if trilha["id"] not in deleted_trilhas_ids]
+            trilhas_list.append(trilha_data)
         
         result = {
             "success": True,
-            "trilhas": trilhas_mock,
-            "total": len(trilhas_mock)
+            "trilhas": trilhas_list,
+            "total": len(trilhas_list)
         }
         
         return APIResponse(
@@ -804,7 +793,10 @@ async def get_user_created_trilhas(user_id: int):
             data=result
         )
         
+    except HTTPException:
+        raise
     except Exception as e:
+        print(f"Error getting user created trilhas: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Internal server error: {str(e)}"
@@ -1033,3 +1025,4 @@ def create_default_questions(topic: str, module_title: str) -> List[dict]:
         default_questions.append(question)
     
     return default_questions
+
