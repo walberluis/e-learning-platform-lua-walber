@@ -5,7 +5,7 @@ Data Access Layer - Repository Package
 
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func, and_
+from sqlalchemy import func
 from data_access.repositories.base_repository import BaseRepository
 from infrastructure.database.models import Trilha, Conteudo, Usuario, Desempenho
 
@@ -17,102 +17,89 @@ class TrilhaRepository(BaseRepository[Trilha]):
     
     def __init__(self, db_session: Session = None):
         super().__init__(Trilha, db_session)
+
+    # =========================
+    # GET Methods
+    # =========================
     
     async def get_with_conteudos(self, trilha_id: int) -> Optional[Trilha]:
-        """
-        Get trilha with all its content loaded.
-        
-        Args:
-            trilha_id: Trilha ID
-            
-        Returns:
-            Trilha with conteudos loaded or None if not found
-        """
         try:
             db = self.get_db()
             return db.query(Trilha).options(joinedload(Trilha.conteudos)).filter(Trilha.id == trilha_id).first()
         except Exception as e:
             print(f"Error getting trilha with conteudos {trilha_id}: {e}")
             return None
-    
+
     async def get_with_usuarios(self, trilha_id: int) -> Optional[Trilha]:
-        """
-        Get trilha with enrolled users.
-        
-        Args:
-            trilha_id: Trilha ID
-            
-        Returns:
-            Trilha with usuarios loaded or None if not found
-        """
         try:
             db = self.get_db()
             return db.query(Trilha).options(joinedload(Trilha.usuarios)).filter(Trilha.id == trilha_id).first()
         except Exception as e:
             print(f"Error getting trilha with usuarios {trilha_id}: {e}")
             return None
-    
+
     async def get_by_difficulty(self, dificuldade: str) -> List[Trilha]:
-        """
-        Get trilhas by difficulty level.
-        
-        Args:
-            dificuldade: Difficulty level (beginner, intermediate, advanced)
-            
-        Returns:
-            List of trilhas with matching difficulty
-        """
         try:
             db = self.get_db()
             return db.query(Trilha).filter(Trilha.dificuldade == dificuldade).all()
         except Exception as e:
             print(f"Error getting trilhas by difficulty '{dificuldade}': {e}")
             return []
-    
+
     async def search_trilhas(self, search_term: str, limit: int = 50) -> List[Trilha]:
-        """
-        Search trilhas by title.
-        
-        Args:
-            search_term: Search term to match against title
-            limit: Maximum number of results
-            
-        Returns:
-            List of matching trilhas
-        """
         try:
             db = self.get_db()
             search_pattern = f"%{search_term}%"
-            return db.query(Trilha).filter(
-                Trilha.titulo.ilike(search_pattern)
-            ).limit(limit).all()
+            return db.query(Trilha).filter(Trilha.titulo.ilike(search_pattern)).limit(limit).all()
         except Exception as e:
             print(f"Error searching trilhas with term '{search_term}': {e}")
             return []
-    
+
+    # =========================
+    # DELETE Method
+    # =========================
+
+    async def delete(self, trilha_id: int) -> bool:
+        db = self.get_db()
+        try:
+            trilha = db.query(Trilha).options(
+                joinedload(Trilha.conteudos),
+                joinedload(Trilha.usuarios)
+            ).filter(Trilha.id == trilha_id).first()
+            if not trilha:
+                print(f"Trilha {trilha_id} not found.")
+                return False
+
+            # Remove associações com usuários
+            trilha.usuarios.clear()
+            db.flush()
+
+            # Deleta desempenhos relacionados a cada conteúdo
+            for conteudo in trilha.conteudos:
+                db.query(Desempenho).filter(Desempenho.conteudo_id == conteudo.id).delete(synchronize_session=False)
+                db.delete(conteudo)
+
+            # Deleta a trilha
+            db.delete(trilha)
+            db.commit()
+            return True
+        except Exception as e:
+            db.rollback()
+            print(f"Error deleting trilha {trilha_id}: {e}")
+            return False
+
+    # =========================
+    # Other Methods (existing)
+    # =========================
+
     async def get_popular_trilhas(self, limit: int = 10) -> List[Dict[str, Any]]:
-        """
-        Get most popular trilhas based on user enrollment.
-        
-        Args:
-            limit: Maximum number of results
-            
-        Returns:
-            List of trilhas with enrollment counts
-        """
         try:
             db = self.get_db()
             result = db.query(
                 Trilha,
                 func.count(Usuario.id).label('enrollment_count')
-            ).outerjoin(
-                Trilha.usuarios
-            ).group_by(
-                Trilha.id
-            ).order_by(
-                func.count(Usuario.id).desc()
-            ).limit(limit).all()
-            
+            ).outerjoin(Trilha.usuarios).group_by(Trilha.id).order_by(func.count(Usuario.id).desc()).limit(limit).all()
+
             return [
                 {
                     "trilha": trilha,
@@ -126,46 +113,28 @@ class TrilhaRepository(BaseRepository[Trilha]):
         except Exception as e:
             print(f"Error getting popular trilhas: {e}")
             return []
-    
+
     async def get_trilha_statistics(self, trilha_id: int) -> Dict[str, Any]:
-        """
-        Get comprehensive statistics for a trilha.
-        
-        Args:
-            trilha_id: Trilha ID
-            
-        Returns:
-            Dictionary with trilha statistics
-        """
         try:
             db = self.get_db()
-            trilha = db.query(Trilha).options(
-                joinedload(Trilha.conteudos),
-                joinedload(Trilha.usuarios)
-            ).filter(Trilha.id == trilha_id).first()
-            
+            trilha = db.query(Trilha).options(joinedload(Trilha.conteudos), joinedload(Trilha.usuarios)).filter(Trilha.id == trilha_id).first()
             if not trilha:
                 return {}
-            
-            # Get performance data for this trilha's content
-            desempenhos = db.query(Desempenho).join(Conteudo).filter(
-                Conteudo.trilha_id == trilha_id
-            ).all()
-            
+
+            desempenhos = db.query(Desempenho).join(Conteudo).filter(Conteudo.trilha_id == trilha_id).all()
+
             total_enrollments = len(trilha.usuarios)
             total_content = len(trilha.conteudos)
-            
+
             if desempenhos:
                 avg_progress = sum(d.progresso for d in desempenhos) / len(desempenhos)
-                avg_grade = sum(d.nota for d in desempenhos if d.nota is not None) / len([d for d in desempenhos if d.nota is not None]) if any(d.nota is not None for d in desempenhos) else 0
+                notas = [d.nota for d in desempenhos if d.nota is not None]
+                avg_grade = sum(notas) / len(notas) if notas else 0
                 total_study_time = sum(d.tempo_estudo for d in desempenhos)
-                completion_rate = len([d for d in desempenhos if d.progresso >= 100]) / len(desempenhos) * 100 if desempenhos else 0
+                completion_rate = len([d for d in desempenhos if d.progresso >= 100]) / len(desempenhos) * 100
             else:
-                avg_progress = 0
-                avg_grade = 0
-                total_study_time = 0
-                completion_rate = 0
-            
+                avg_progress = avg_grade = total_study_time = completion_rate = 0
+
             return {
                 "trilha_id": trilha_id,
                 "titulo": trilha.titulo,
@@ -181,7 +150,6 @@ class TrilhaRepository(BaseRepository[Trilha]):
         except Exception as e:
             print(f"Error getting trilha statistics for {trilha_id}: {e}")
             return {}
-    
     async def get_recommended_trilhas_for_user(self, user_id: int, limit: int = 5) -> List[Trilha]:
         """
         Get recommended trilhas for a user based on their profile and progress.
