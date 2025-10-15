@@ -276,49 +276,52 @@ class DesempenhoRepository(BaseRepository[Desempenho]):
             user_id: User ID
             
         Returns:
-            Number of consecutive days with learning activity
+            Number of consecutive days with learning activity (minimum 1 if any activity exists)
         """
         try:
             db = self.get_db()
             
             # Get distinct dates with activity, ordered by date descending
             activity_dates = db.query(
-                func.date(Desempenho.updated_at).label('activity_date')
+                func.date(Desempenho.created_at).label('activity_date')
             ).filter(
-                and_(
-                    Desempenho.usuario_id == user_id,
-                    Desempenho.updated_at.isnot(None)
-                )
+                Desempenho.usuario_id == user_id
             ).distinct().order_by(
-                desc(func.date(Desempenho.updated_at))
+                desc(func.date(Desempenho.created_at))
             ).all()
             
             if not activity_dates:
                 return 0
             
-            # Convert to list of dates for easier manipulation, ignorando datas nulas
+            # Convert to list of dates for easier manipulation
             dates_list = [activity_date_tuple[0] for activity_date_tuple in activity_dates if activity_date_tuple[0] is not None]
             
             if not dates_list:
                 return 0
             
             today = datetime.utcnow().date()
-            streak = 0
+            streak = 1  # Começar com 1 se há atividade
             
             # Check if there's activity today or yesterday (streak is still valid)
-            most_recent_date = dates_list[0]
-            if most_recent_date < today - timedelta(days=1):
-                # No activity today or yesterday, streak is broken
-                return 0
+            most_recent_date = datetime.strptime(str(dates_list[0]), "%Y-%m-%d").date()
+            
+            # Calculate days since last activity
+            days_since_last_activity = (today - most_recent_date).days
+            
+            if days_since_last_activity > 1:
+                # Last activity was more than 1 day ago, but return 1 (início de nova sequência)
+                return 1
             
             # Count consecutive days starting from today or yesterday
             expected_date = today if most_recent_date == today else today - timedelta(days=1)
             
             for activity_date in dates_list:
-                if activity_date == expected_date:
+                activity_date_obj = datetime.strptime(str(activity_date), "%Y-%m-%d").date()
+                
+                if activity_date_obj == expected_date:
                     streak += 1
                     expected_date = expected_date - timedelta(days=1)
-                elif activity_date < expected_date:
+                else:
                     # There's a gap in the streak
                     break
             
