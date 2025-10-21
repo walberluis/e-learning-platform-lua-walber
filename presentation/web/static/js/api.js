@@ -467,32 +467,29 @@ function updateLoadingState(isLoading) {
         loadingIndicator.style.display = isLoading ? 'block' : 'none';
     }
     
-    // // Disable/enable forms during loading
-    // const forms = document.querySelectorAll('form');
-    // forms.forEach(form => {
-    //     if (form.id === 'createTrilhaForm') return;
-
-    //     const submitBtn = form.querySelector('button[type="submit"]');
-    //     if (submitBtn) {
+    // Disable/enable forms during loading
+    const forms = document.querySelectorAll('form');
+    forms.forEach(form => {
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = isLoading;
             
-    //         submitBtn.disabled = isLoading;
-            
-    //         if (isLoading) {
-    //             // Store original text if not already stored
-    //             if (!submitBtn.dataset.originalText) {
-    //                 submitBtn.dataset.originalText = submitBtn.textContent;
-    //             }
-    //             // Just disable the button, keep original text
-    //             submitBtn.style.opacity = '0.7';
-    //         } else {
-    //             // Restore original text and style
-    //             if (submitBtn.dataset.originalText) {
-    //                 submitBtn.textContent = submitBtn.dataset.originalText;
-    //             }
-    //             submitBtn.style.opacity = '1';
-    //         }
-    //     }
-    // });
+            if (isLoading) {
+                // Store original text if not already stored
+                if (!submitBtn.dataset.originalText) {
+                    submitBtn.dataset.originalText = submitBtn.textContent;
+                }
+                // Just disable the button, keep original text
+                submitBtn.style.opacity = '0.7';
+            } else {
+                // Restore original text and style
+                if (submitBtn.dataset.originalText) {
+                    submitBtn.textContent = submitBtn.dataset.originalText;
+                }
+                submitBtn.style.opacity = '1';
+            }
+        }
+    });
 }
 
 // Export API modules
