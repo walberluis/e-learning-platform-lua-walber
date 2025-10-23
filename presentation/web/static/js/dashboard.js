@@ -294,7 +294,7 @@ function updateRecommendationsSection(recommendationsData) {
                 </span>
             </div>
             <!-- adicionando o botão para nova trilha -->
-          <div style="display: flex; justify-content: flex-begin; margin-top: 8px;"> 
+          <div style="display: flex; justify-content: flex-begin; margin-top: 8px;">  
             <button class="btn btn-small btn-outline" onclick="window.trilhasPersonalizadas?.startTrilha(${rec.id})">
                 <i class="fas fa-play"></i> Iniciar
             </button>
