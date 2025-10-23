@@ -6,205 +6,205 @@ let chartsInitialized = false;
 
 // Initialize dashboard
 function initDashboard() {
-    const currentUser = window.elearning?.getCurrentUser();
-    
-    if (!currentUser) {
-        console.error('User not logged in');
-        return;
-    }
-    
-    setupDashboardEventListeners();
-    loadDashboardData();
-    
-    console.log('Dashboard initialized for user:', currentUser.id);
+  const currentUser = window.elearning?.getCurrentUser();
+
+  if (!currentUser) {
+    console.error('User not logged in');
+    return;
+  }
+
+  setupDashboardEventListeners();
+  loadDashboardData();
+
+  console.log('Dashboard initialized for user:', currentUser.id);
 }
 
 // Setup event listeners
 function setupDashboardEventListeners() {
-    // Refresh button
-    const refreshBtn = document.getElementById('refreshDashboard');
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', loadDashboardData);
-    }
-    
-    // Period selector
-    const periodSelector = document.getElementById('analyticsPeriod');
-    if (periodSelector) {
-        periodSelector.addEventListener('change', (e) => {
-            loadAnalytics(parseInt(e.target.value));
-        });
-    }
+  // Refresh button
+  const refreshBtn = document.getElementById('refreshDashboard');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', loadDashboardData);
+  }
+
+  // Period selector
+  const periodSelector = document.getElementById('analyticsPeriod');
+  if (periodSelector) {
+    periodSelector.addEventListener('change', (e) => {
+      loadAnalytics(parseInt(e.target.value));
+    });
+  }
 }
 
 // Load dashboard data
 async function loadDashboardData() {
-    const currentUser = window.elearning?.getCurrentUser();
-    if (!currentUser) return;
-    
-    try {
-        // Load user profile with progress
-        const profilePromise = UserAPI.getProfile(currentUser.id);
-        
-        // Load analytics
-        const analyticsPromise = UserAPI.getAnalytics(currentUser.id, 30);
-        
-        // Load recommendations
-        const recommendationsPromise = RecommendationsAPI.getAIRecommendations(currentUser.id, 5);
-        
-        // Load learning path
-        const learningPathPromise = UserAPI.getLearningPath(currentUser.id);
-        
-        // Load custom trilhas
-        const customTrilhasPromise = loadUserCustomTrilhas(currentUser.id);
-        
-        // Wait for all data
-        const [profileResponse, analyticsResponse, recommendationsResponse, learningPathResponse, customTrilhasResponse] = 
-            await Promise.all([
-                profilePromise.catch(err => { console.error('Profile error:', err); return { success: false, data: {} }; }),
-                analyticsPromise.catch(err => { console.error('Analytics error:', err); return { success: false, data: {} }; }),
-                recommendationsPromise.catch(err => { console.error('Recommendations error:', err); return { success: false, data: {} }; }),
-                learningPathPromise.catch(err => { console.error('Learning path error:', err); return { success: false, data: {} }; }),
-                customTrilhasPromise.catch(err => { console.error('Custom trilhas error:', err); return { success: false, data: {} }; })
-            ]);
-        
-        console.log('Dashboard data loaded:', {
-            profile: profileResponse,
-            analytics: analyticsResponse,
-            recommendations: recommendationsResponse,
-            learningPath: learningPathResponse,
-            customTrilhas: customTrilhasResponse
-        });
-        
-        // Update dashboard with loaded data
-        if (profileResponse && profileResponse.success) {
-            updateProfileSection(profileResponse.data);
-        }
-        
-        if (analyticsResponse && analyticsResponse.success) {
-            updateAnalyticsSection(analyticsResponse.data);
-        } else {
-            console.warn('Analytics response not successful:', analyticsResponse);
-        }
-        
-        if (recommendationsResponse && recommendationsResponse.success) {
-            updateRecommendationsSection(recommendationsResponse.data);
-        }
-        
-        if (learningPathResponse && learningPathResponse.success) {
-            updateLearningPathSection(learningPathResponse.data);
-        }
-        
-        if (customTrilhasResponse && customTrilhasResponse.success) {
-            updateCustomTrilhasSection(customTrilhasResponse.data);
-            // Update created trilhas count
-            updateStatCard('createdTrilhas', customTrilhasResponse.data?.trilhas?.length || 0);
-            // Update recent activity
-            updateRecentActivity(customTrilhasResponse.data?.trilhas || []);
-        } else {
-            updateStatCard('createdTrilhas', 0);
-        }
-        
-        // Store dashboard data
-        dashboardData = {
-            profile: profileResponse.data,
-            analytics: analyticsResponse.data,
-            recommendations: recommendationsResponse.data,
-            learningPath: learningPathResponse.data,
-            customTrilhas: customTrilhasResponse.data
-        };
-        
-    } catch (error) {
-        console.error('Error loading dashboard data:', error);
-        showDashboardError('Erro ao carregar dados do dashboard');
+  const currentUser = window.elearning?.getCurrentUser();
+  if (!currentUser) return;
+
+  try {
+    // Load user profile with progress
+    const profilePromise = UserAPI.getProfile(currentUser.id);
+
+    // Load analytics
+    const analyticsPromise = UserAPI.getAnalytics(currentUser.id, 30);
+
+    // Load recommendations
+    const recommendationsPromise = RecommendationsAPI.getAIRecommendations(currentUser.id, 2);
+
+    // Load learning path
+    const learningPathPromise = UserAPI.getLearningPath(currentUser.id);
+
+    // Load custom trilhas
+    const customTrilhasPromise = loadUserCustomTrilhas(currentUser.id);
+
+    // Wait for all data
+    const [profileResponse, analyticsResponse, recommendationsResponse, learningPathResponse, customTrilhasResponse] =
+      await Promise.all([
+        profilePromise.catch(err => { console.error('Profile error:', err); return { success: false, data: {} }; }),
+        analyticsPromise.catch(err => { console.error('Analytics error:', err); return { success: false, data: {} }; }),
+        recommendationsPromise.catch(err => { console.error('Recommendations error:', err); return { success: false, data: {} }; }),
+        learningPathPromise.catch(err => { console.error('Learning path error:', err); return { success: false, data: {} }; }),
+        customTrilhasPromise.catch(err => { console.error('Custom trilhas error:', err); return { success: false, data: {} }; })
+      ]);
+
+    console.log('Dashboard data loaded:', {
+      profile: profileResponse,
+      analytics: analyticsResponse,
+      recommendations: recommendationsResponse,
+      learningPath: learningPathResponse,
+      customTrilhas: customTrilhasResponse
+    });
+
+    // Update dashboard with loaded data
+    if (profileResponse && profileResponse.success) {
+      updateProfileSection(profileResponse.data);
     }
+
+    if (analyticsResponse && analyticsResponse.success) {
+      updateAnalyticsSection(analyticsResponse.data);
+    } else {
+      console.warn('Analytics response not successful:', analyticsResponse);
+    }
+
+    if (recommendationsResponse && recommendationsResponse.success) {
+      updateRecommendationsSection(recommendationsResponse.data);
+    }
+
+    if (learningPathResponse && learningPathResponse.success) {
+      updateLearningPathSection(learningPathResponse.data);
+    }
+
+    if (customTrilhasResponse && customTrilhasResponse.success) {
+      updateCustomTrilhasSection(customTrilhasResponse.data);
+      // Update created trilhas count
+      updateStatCard('createdTrilhas', customTrilhasResponse.data?.trilhas?.length || 0);
+      // Update recent activity
+      updateRecentActivity(customTrilhasResponse.data?.trilhas || []);
+    } else {
+      updateStatCard('createdTrilhas', 0);
+    }
+
+    // Store dashboard data
+    dashboardData = {
+      profile: profileResponse.data,
+      analytics: analyticsResponse.data,
+      recommendations: recommendationsResponse.data,
+      learningPath: learningPathResponse.data,
+      customTrilhas: customTrilhasResponse.data
+    };
+
+  } catch (error) {
+    console.error('Error loading dashboard data:', error);
+    showDashboardError('Erro ao carregar dados do dashboard');
+  }
 }
 
 // Update profile section
 function updateProfileSection(profileData) {
-    // Update user info
-    const userNameElement = document.getElementById('dashboardUserName');
-    const userEmailElement = document.getElementById('dashboardUserEmail');
-    const userLevelElement = document.getElementById('dashboardUserLevel');
-    
-    if (userNameElement) userNameElement.textContent = profileData.nome || 'Usuário';
-    if (userEmailElement) userEmailElement.textContent = profileData.email || '';
-    if (userLevelElement) {
-        const levelLabels = {
-            beginner: 'Iniciante',
-            intermediate: 'Intermediário', 
-            advanced: 'Avançado'
-        };
-        userLevelElement.textContent = levelLabels[profileData.perfil_aprend] || profileData.perfil_aprend;
-    }
-    
-    // Update enrolled trilhas count
-    const enrolledTrilhasElement = document.getElementById('enrolledTrilhas');
-    if (enrolledTrilhasElement) {
-        enrolledTrilhasElement.textContent = profileData.enrolled_trilhas?.length || 0;
-    }
+  // Update user info
+  const userNameElement = document.getElementById('dashboardUserName');
+  const userEmailElement = document.getElementById('dashboardUserEmail');
+  const userLevelElement = document.getElementById('dashboardUserLevel');
+
+  if (userNameElement) userNameElement.textContent = profileData.nome || 'Usuário';
+  if (userEmailElement) userEmailElement.textContent = profileData.email || '';
+  if (userLevelElement) {
+    const levelLabels = {
+      beginner: 'Iniciante',
+      intermediate: 'Intermediário',
+      advanced: 'Avançado'
+    };
+    userLevelElement.textContent = levelLabels[profileData.perfil_aprend] || profileData.perfil_aprend;
+  }
+
+  // Update enrolled trilhas count
+  const enrolledTrilhasElement = document.getElementById('enrolledTrilhas');
+  if (enrolledTrilhasElement) {
+    enrolledTrilhasElement.textContent = profileData.enrolled_trilhas?.length || 0;
+  }
 }
 
 // Update analytics section
 function updateAnalyticsSection(analyticsData) {
-    console.log('Updating analytics section with data:', analyticsData);
-    
-    // Update main stats
-    updateStatCard('overallProgress', `${analyticsData.completion_rate || 0}%`);
-    updateStatCard('studyTime', `${analyticsData.total_study_time_hours || 0}h`);
-    updateStatCard('learningStreak', analyticsData.learning_streak || 0);
-    
-    // Update progress circle
-    updateProgressCircle(analyticsData.completion_rate || 0);
-    
-    // Update detailed analytics if function exists
-    if (typeof updateDetailedAnalytics === 'function') {
-        updateDetailedAnalytics(analyticsData);
-    }
+  console.log('Updating analytics section with data:', analyticsData);
+
+  // Update main stats
+  updateStatCard('overallProgress', `${analyticsData.completion_rate || 0}%`);
+  updateStatCard('studyTime', `${analyticsData.total_study_time_hours || 0}h`);
+  updateStatCard('learningStreak', analyticsData.learning_streak || 0);
+
+  // Update progress circle
+  updateProgressCircle(analyticsData.completion_rate || 0);
+
+  // Update detailed analytics if function exists
+  if (typeof updateDetailedAnalytics === 'function') {
+    updateDetailedAnalytics(analyticsData);
+  }
 }
 
 // Update stat card
 function updateStatCard(elementId, value) {
-    const element = document.getElementById(elementId);
-    if (element) {
-        element.textContent = value;
-    }
+  const element = document.getElementById(elementId);
+  if (element) {
+    element.textContent = value;
+  }
 }
 
 // Update progress circle
 function updateProgressCircle(percentage) {
-    const progressCircle = document.querySelector('.progress-circle');
-    const progressValue = document.querySelector('.progress-value');
-    
-    if (progressCircle && progressValue) {
-        // Update text
-        progressValue.textContent = `${percentage}%`;
-        
-        // Update circle background (conic gradient)
-        const degrees = (percentage / 100) * 360;
-        progressCircle.style.background = `conic-gradient(var(--primary-color) ${degrees}deg, var(--gray-200) 0deg)`;
-        
-        // Animate the progress
-        let currentDegrees = 0;
-        const increment = degrees / 30; // 30 frames animation
-        
-        const animateProgress = () => {
-            if (currentDegrees < degrees) {
-                currentDegrees += increment;
-                progressCircle.style.background = `conic-gradient(var(--primary-color) ${currentDegrees}deg, var(--gray-200) 0deg)`;
-                requestAnimationFrame(animateProgress);
-            }
-        };
-        
-        animateProgress();
-    }
+  const progressCircle = document.querySelector('.progress-circle');
+  const progressValue = document.querySelector('.progress-value');
+
+  if (progressCircle && progressValue) {
+    // Update text
+    progressValue.textContent = `${percentage}%`;
+
+    // Update circle background (conic gradient)
+    const degrees = (percentage / 100) * 360;
+    progressCircle.style.background = `conic-gradient(var(--primary-color) ${degrees}deg, var(--gray-200) 0deg)`;
+
+    // Animate the progress
+    let currentDegrees = 0;
+    const increment = degrees / 30; // 30 frames animation
+
+    const animateProgress = () => {
+      if (currentDegrees < degrees) {
+        currentDegrees += increment;
+        progressCircle.style.background = `conic-gradient(var(--primary-color) ${currentDegrees}deg, var(--gray-200) 0deg)`;
+        requestAnimationFrame(animateProgress);
+      }
+    };
+
+    animateProgress();
+  }
 }
 
 // Update detailed analytics
 function updateDetailedAnalytics(analyticsData) {
-    const detailsContainer = document.getElementById('analyticsDetails');
-    if (!detailsContainer) return;
-    
-    detailsContainer.innerHTML = `
+  const detailsContainer = document.getElementById('analyticsDetails');
+  if (!detailsContainer) return;
+
+  detailsContainer.innerHTML = `
         <div class="analytics-grid">
             <div class="analytics-card">
                 <h4>Desempenho Recente</h4>
@@ -259,22 +259,26 @@ function updateDetailedAnalytics(analyticsData) {
 
 // Update recommendations section
 function updateRecommendationsSection(recommendationsData) {
-    const recommendationsGrid = document.getElementById('recommendationsGrid');
-    if (!recommendationsGrid) return;
-    
-    if (!recommendationsData.structured_recommendations?.content_recommendations?.length) {
-        recommendationsGrid.innerHTML = `
+  const recommendationsGrid = document.getElementById('recommendationsGrid');
+  const hasCompletedTrack = true;
+  if (!recommendationsGrid) return;
+
+  if (hasCompletedTrack) {
+    recommendationsGrid.parentElement.style.display = ""
+  }
+
+  if (!recommendationsData.structured_recommendations?.content_recommendations?.length) {
+    recommendationsGrid.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-lightbulb"></i>
                 <p>Continue estudando para receber recomendações personalizadas!</p>
             </div>
         `;
-        return;
-    }
-    
-    const recommendations = recommendationsData.structured_recommendations.content_recommendations;
-    
-    recommendationsGrid.innerHTML = recommendations.map(rec => `
+    return;
+  }
+
+  const recommendations = recommendationsData.structured_recommendations.content_recommendations;
+  recommendationsGrid.innerHTML = recommendations.map(rec => `
         <div class="recommendation-card" onclick="handleRecommendationClick(${rec.id}, '${rec.type}')">
             <div class="recommendation-header">
                 <div class="recommendation-icon">
@@ -289,17 +293,23 @@ function updateRecommendationsSection(recommendationsData) {
                     ${Math.round(rec.confidence * 100)}% confiança
                 </span>
             </div>
+            <!-- adicionando o botão para nova trilha -->
+          <div style="display: flex; justify-content: flex-begin; margin-top: 8px;"> 
+            <button class="btn btn-small btn-outline" onclick="window.trilhasPersonalizadas?.startTrilha(${rec.id})">
+                <i class="fas fa-play"></i> Iniciar
+            </button>
+          </div>
         </div>
     `).join('');
 }
 
 // Update learning path section
 function updateLearningPathSection(learningPathData) {
-    const learningPathContainer = document.getElementById('learningPathContainer');
-    if (!learningPathContainer) return;
-    
-    if (!learningPathData.learning_path?.length) {
-        learningPathContainer.innerHTML = `
+  const learningPathContainer = document.getElementById('learningPathContainer');
+  if (!learningPathContainer) return;
+
+  if (!learningPathData.learning_path?.length) {
+    learningPathContainer.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-route"></i>
                 <p>Inscreva-se em trilhas para ver seu caminho de aprendizado!</p>
@@ -308,12 +318,12 @@ function updateLearningPathSection(learningPathData) {
                 </button>
             </div>
         `;
-        return;
-    }
-    
-    const learningPath = learningPathData.learning_path;
-    
-    learningPathContainer.innerHTML = `
+    return;
+  }
+
+  const learningPath = learningPathData.learning_path;
+
+  learningPathContainer.innerHTML = `
         <div class="learning-path-grid">
             ${learningPath.map(path => `
                 <div class="learning-path-card">
@@ -353,61 +363,61 @@ function updateLearningPathSection(learningPathData) {
 
 // Handle recommendation click
 function handleRecommendationClick(id, type) {
-    if (type === 'trilha') {
-        openTrilha(id);
-    } else {
-        // Handle other recommendation types
-        window.elearning?.showNotification('Recomendação aplicada!', 'success');
-    }
+  if (type === 'trilha') {
+    openTrilha(id);
+  } else {
+    // Handle other recommendation types
+    window.elearning?.showNotification('Recomendação aplicada!', 'success');
+  }
 }
 
 // Get recommendation icon
 function getRecommendationIcon(type) {
-    const icons = {
-        trilha: 'book',
-        habit: 'lightbulb',
-        content: 'play-circle',
-        assessment: 'clipboard-check'
-    };
-    return icons[type] || 'star';
+  const icons = {
+    trilha: 'book',
+    habit: 'lightbulb',
+    content: 'play-circle',
+    assessment: 'clipboard-check'
+  };
+  return icons[type] || 'star';
 }
 
 // Get difficulty label
 function getDifficultyLabel(difficulty) {
-    const labels = {
-        beginner: 'Iniciante',
-        intermediate: 'Intermediário',
-        advanced: 'Avançado'
-    };
-    return labels[difficulty] || difficulty;
+  const labels = {
+    beginner: 'Iniciante',
+    intermediate: 'Intermediário',
+    advanced: 'Avançado'
+  };
+  return labels[difficulty] || difficulty;
 }
 
 // Get confidence class
 function getConfidenceClass(confidence) {
-    if (confidence >= 0.8) return 'high';
-    if (confidence >= 0.6) return 'medium';
-    return 'low';
+  if (confidence >= 0.8) return 'high';
+  if (confidence >= 0.6) return 'medium';
+  return 'low';
 }
 
 // Show dashboard loading
 function showDashboardLoading(show) {
-    const loadingElements = document.querySelectorAll('.dashboard-loading');
-    const contentElements = document.querySelectorAll('.dashboard-content');
-    
-    loadingElements.forEach(el => {
-        el.style.display = show ? 'block' : 'none';
-    });
-    
-    contentElements.forEach(el => {
-        el.style.opacity = show ? '0.5' : '1';
-    });
+  const loadingElements = document.querySelectorAll('.dashboard-loading');
+  const contentElements = document.querySelectorAll('.dashboard-content');
+
+  loadingElements.forEach(el => {
+    el.style.display = show ? 'block' : 'none';
+  });
+
+  contentElements.forEach(el => {
+    el.style.opacity = show ? '0.5' : '1';
+  });
 }
 
 // Show dashboard error
 function showDashboardError(message) {
-    const errorContainer = document.getElementById('dashboardError');
-    if (errorContainer) {
-        errorContainer.innerHTML = `
+  const errorContainer = document.getElementById('dashboardError');
+  if (errorContainer) {
+    errorContainer.innerHTML = `
             <div class="alert alert-error">
                 <i class="fas fa-exclamation-triangle"></i>
                 <span>${message}</span>
@@ -416,92 +426,92 @@ function showDashboardError(message) {
                 </button>
             </div>
         `;
-        errorContainer.style.display = 'block';
-    }
+    errorContainer.style.display = 'block';
+  }
 }
 
 // Load analytics for specific period
 async function loadAnalytics(days) {
-    const currentUser = window.elearning?.getCurrentUser();
-    if (!currentUser) return;
-    
-    try {
-        const response = await UserAPI.getAnalytics(currentUser.id, days);
-        
-        if (response.success) {
-            updateAnalyticsSection(response.data);
-        }
-    } catch (error) {
-        console.error('Error loading analytics:', error);
+  const currentUser = window.elearning?.getCurrentUser();
+  if (!currentUser) return;
+
+  try {
+    const response = await UserAPI.getAnalytics(currentUser.id, days);
+
+    if (response.success) {
+      updateAnalyticsSection(response.data);
     }
+  } catch (error) {
+    console.error('Error loading analytics:', error);
+  }
 }
 
 // Load user custom trilhas
 async function loadUserCustomTrilhas(userId) {
-    try {
-        const response = await fetch(`/api/v1/trilhas-personalizadas/user/${userId}/created`);
-        const result = await response.json();
-        return result;
-    } catch (error) {
-        console.error('Error loading custom trilhas:', error);
-        return { success: false, error: error.message };
-    }
+  try {
+    const response = await fetch(`/api/v1/trilhas-personalizadas/user/${userId}/created`);
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Error loading custom trilhas:', error);
+    return { success: false, error: error.message };
+  }
 }
 
 // Update recent activity
 function updateRecentActivity(trilhas) {
-    const activityList = document.getElementById('recentActivityList');
-    if (!activityList) return;
-    
-    if (!trilhas || trilhas.length === 0) {
-        activityList.innerHTML = `
+  const activityList = document.getElementById('recentActivityList');
+  if (!activityList) return;
+
+  if (!trilhas || trilhas.length === 0) {
+    activityList.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-history"></i>
                 <p>Nenhuma atividade recente</p>
                 <p class="small-text">Crie sua primeira trilha para começar!</p>
             </div>
         `;
-        return;
+    return;
+  }
+
+  // Show the 5 most recent trilhas
+  const recentTrilhas = trilhas.slice(0, 5);
+
+  activityList.innerHTML = recentTrilhas.map(trilha => {
+    const difficultyLabels = {
+      'iniciante': 'Nível Iniciante',
+      'intermediario': 'Nível Intermediário',
+      'avancado': 'Nível Avançado',
+      'beginner': 'Nível Iniciante',
+      'intermediate': 'Nível Intermediário',
+      'advanced': 'Nível Avançado'
+    };
+
+    const difficultyLabel = difficultyLabels[trilha.dificuldade] || trilha.dificuldade;
+
+    // Calculate time ago
+    let timeAgo = 'Hoje';
+    if (trilha.created_at) {
+      const createdDate = new Date(trilha.created_at);
+      const now = new Date();
+      const diffDays = Math.floor((now - createdDate) / (1000 * 60 * 60 * 24));
+
+      if (diffDays === 0) {
+        timeAgo = 'Hoje';
+      } else if (diffDays === 1) {
+        timeAgo = 'Ontem';
+      } else if (diffDays < 7) {
+        timeAgo = `${diffDays} dias atrás`;
+      } else if (diffDays < 30) {
+        const weeks = Math.floor(diffDays / 7);
+        timeAgo = `${weeks} ${weeks === 1 ? 'semana' : 'semanas'} atrás`;
+      } else {
+        const months = Math.floor(diffDays / 30);
+        timeAgo = `${months} ${months === 1 ? 'mês' : 'meses'} atrás`;
+      }
     }
-    
-    // Show the 5 most recent trilhas
-    const recentTrilhas = trilhas.slice(0, 5);
-    
-    activityList.innerHTML = recentTrilhas.map(trilha => {
-        const difficultyLabels = {
-            'iniciante': 'Nível Iniciante',
-            'intermediario': 'Nível Intermediário',
-            'avancado': 'Nível Avançado',
-            'beginner': 'Nível Iniciante',
-            'intermediate': 'Nível Intermediário',
-            'advanced': 'Nível Avançado'
-        };
-        
-        const difficultyLabel = difficultyLabels[trilha.dificuldade] || trilha.dificuldade;
-        
-        // Calculate time ago
-        let timeAgo = 'Hoje';
-        if (trilha.created_at) {
-            const createdDate = new Date(trilha.created_at);
-            const now = new Date();
-            const diffDays = Math.floor((now - createdDate) / (1000 * 60 * 60 * 24));
-            
-            if (diffDays === 0) {
-                timeAgo = 'Hoje';
-            } else if (diffDays === 1) {
-                timeAgo = 'Ontem';
-            } else if (diffDays < 7) {
-                timeAgo = `${diffDays} dias atrás`;
-            } else if (diffDays < 30) {
-                const weeks = Math.floor(diffDays / 7);
-                timeAgo = `${weeks} ${weeks === 1 ? 'semana' : 'semanas'} atrás`;
-            } else {
-                const months = Math.floor(diffDays / 30);
-                timeAgo = `${months} ${months === 1 ? 'mês' : 'meses'} atrás`;
-            }
-        }
-        
-        return `
+
+    return `
             <div class="activity-item">
                 <div class="activity-icon">
                     <i class="fas fa-plus"></i>
@@ -513,21 +523,21 @@ function updateRecentActivity(trilhas) {
                 <div class="activity-time">${timeAgo}</div>
             </div>
         `;
-    }).join('');
+  }).join('');
 }
 
 // Update custom trilhas section
 function updateCustomTrilhasSection(customTrilhasData) {
-    // Add custom trilhas card to dashboard if it doesn't exist
-    let customTrilhasContainer = document.getElementById('customTrilhasContainer');
-    
-    if (!customTrilhasContainer) {
-        // Create custom trilhas section
-        const dashboardGrid = document.querySelector('.dashboard-grid');
-        if (dashboardGrid) {
-            const customTrilhasCard = document.createElement('div');
-            customTrilhasCard.className = 'dashboard-card';
-            customTrilhasCard.innerHTML = `
+  // Add custom trilhas card to dashboard if it doesn't exist
+  let customTrilhasContainer = document.getElementById('customTrilhasContainer');
+
+  if (!customTrilhasContainer) {
+    // Create custom trilhas section
+    const dashboardGrid = document.querySelector('.dashboard-grid');
+    if (dashboardGrid) {
+      const customTrilhasCard = document.createElement('div');
+      customTrilhasCard.className = 'dashboard-card';
+      customTrilhasCard.innerHTML = `
                 <div class="card-header">
                     <h3>Trilhas Criadas</h3>
                     <i class="fas fa-magic"></i>
@@ -536,15 +546,15 @@ function updateCustomTrilhasSection(customTrilhasData) {
                     <!-- Custom trilhas content will be loaded here -->
                 </div>
             `;
-            dashboardGrid.appendChild(customTrilhasCard);
-            customTrilhasContainer = document.getElementById('customTrilhasContainer');
-        }
+      dashboardGrid.appendChild(customTrilhasCard);
+      customTrilhasContainer = document.getElementById('customTrilhasContainer');
     }
-    
-    if (!customTrilhasContainer) return;
-    
-    if (!customTrilhasData.trilhas || customTrilhasData.trilhas.length === 0) {
-        customTrilhasContainer.innerHTML = `
+  }
+
+  if (!customTrilhasContainer) return;
+
+  if (!customTrilhasData.trilhas || customTrilhasData.trilhas.length === 0) {
+    customTrilhasContainer.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-plus-circle"></i>
                 <p>Nenhuma trilha personalizada criada ainda</p>
@@ -553,12 +563,12 @@ function updateCustomTrilhasSection(customTrilhasData) {
                 </button>
             </div>
         `;
-        return;
-    }
-    
-    const trilhas = customTrilhasData.trilhas;
-    
-    customTrilhasContainer.innerHTML = `
+    return;
+  }
+
+  const trilhas = customTrilhasData.trilhas;
+
+  customTrilhasContainer.innerHTML = `
         <div class="custom-trilhas-stats">
             <div class="stat-item">
                 <span class="stat-number">${trilhas.length}</span>
@@ -620,57 +630,57 @@ function updateCustomTrilhasSection(customTrilhasData) {
 
 // Export dashboard data
 function exportDashboardData() {
-    if (!dashboardData) {
-        window.elearning?.showNotification('Nenhum dado para exportar', 'warning');
-        return;
-    }
-    
-    const dataStr = JSON.stringify(dashboardData, null, 2);
-    const dataBlob = new Blob([dataStr], {type: 'application/json'});
-    
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(dataBlob);
-    link.download = `dashboard-data-${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
-    
-    window.elearning?.showNotification('Dados exportados com sucesso!', 'success');
+  if (!dashboardData) {
+    window.elearning?.showNotification('Nenhum dado para exportar', 'warning');
+    return;
+  }
+
+  const dataStr = JSON.stringify(dashboardData, null, 2);
+  const dataBlob = new Blob([dataStr], { type: 'application/json' });
+
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(dataBlob);
+  link.download = `dashboard-data-${new Date().toISOString().split('T')[0]}.json`;
+  link.click();
+
+  window.elearning?.showNotification('Dados exportados com sucesso!', 'success');
 }
 
 // Generate progress report
 async function generateProgressReport() {
-    const currentUser = window.elearning?.getCurrentUser();
-    if (!currentUser) return;
-    
-    try {
-        // This would call an API endpoint to generate a PDF report
-        window.elearning?.showNotification('Relatório sendo gerado...', 'info');
-        
-        // For demo, just show success message
-        setTimeout(() => {
-            window.elearning?.showNotification('Relatório de progresso gerado!', 'success');
-        }, 2000);
-        
-    } catch (error) {
-        console.error('Error generating report:', error);
-        window.elearning?.showNotification('Erro ao gerar relatório', 'error');
-    }
+  const currentUser = window.elearning?.getCurrentUser();
+  if (!currentUser) return;
+
+  try {
+    // This would call an API endpoint to generate a PDF report
+    window.elearning?.showNotification('Relatório sendo gerado...', 'info');
+
+    // For demo, just show success message
+    setTimeout(() => {
+      window.elearning?.showNotification('Relatório de progresso gerado!', 'success');
+    }, 2000);
+
+  } catch (error) {
+    console.error('Error generating report:', error);
+    window.elearning?.showNotification('Erro ao gerar relatório', 'error');
+  }
 }
 
 // Initialize dashboard when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
-    // Only initialize if we're on the dashboard section
-    if (document.getElementById('dashboard')) {
-        // Initialize immediately
-        if (window.elearning?.getCurrentUser()) {
-            initDashboard();
-        }
+  // Only initialize if we're on the dashboard section
+  if (document.getElementById('dashboard')) {
+    // Initialize immediately
+    if (window.elearning?.getCurrentUser()) {
+      initDashboard();
     }
+  }
 });
 
 // Export functions
 window.dashboard = {
-    init: initDashboard,
-    loadData: loadDashboardData,
-    exportData: exportDashboardData,
-    generateReport: generateProgressReport
+  init: initDashboard,
+  loadData: loadDashboardData,
+  exportData: exportDashboardData,
+  generateReport: generateProgressReport
 };
