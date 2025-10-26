@@ -394,7 +394,12 @@ class TrilhaRepository(BaseRepository[Trilha]):
         """
         try:
             db = self.get_db()
-            return db.query(Trilha).filter(Trilha.criador_id == criador_id).order_by(Trilha.created_at.desc()).all()
+            return db.query(Trilha).filter(
+                and_(
+                    Trilha.criador_id == criador_id,
+                    Trilha.criador_id.isnot(None)
+                )
+            ).order_by(Trilha.created_at.desc()).all()
         except Exception as e:
             print(f"Error getting trilhas by creator {criador_id}: {e}")
             return []

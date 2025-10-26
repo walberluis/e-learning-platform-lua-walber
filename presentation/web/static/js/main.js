@@ -29,12 +29,23 @@ window.elearning = {
     },
     
     logout: function() {
+        console.log('Logging out and clearing all user data');
         this.currentUser = null;
         this.isAuthenticated = false;
+        
         localStorage.removeItem('elearning_user');
         localStorage.removeItem('elearning_token');
+        
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('elearning_')) {
+                keysToRemove.push(key);
+            }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+        
         this.updateUIForAuthState();
-        // Redirect to trilhas instead of home after logout
         this.showSection('trilhas');
     },
     
@@ -240,30 +251,29 @@ async function handleLogin(event) {
     
     try {
         showLoading(true);
+        window.elearning.logout();
         
-        // Use the UserAPI from api.js
         const response = await UserAPI.login(email, password);
         
-        if (response.data && response.data.access_token) {
-            // Store token
-            localStorage.setItem('elearning_token', response.data.access_token);
+        if (response.success && response.data && response.data.access_token && response.data.user) {
+            console.log('Login successful for user:', response.data.user.id, response.data.user.email);
             
-            // Set user data directly from login response
+            localStorage.setItem('elearning_token', response.data.access_token);
+            localStorage.setItem('elearning_user_id', response.data.user.id.toString());
+            
             window.elearning.setCurrentUser(response.data.user);
             
             hideModal('loginModal');
-            showNotification('Login realizado com sucesso!', 'success');
+            showNotification(`Bem-vindo, ${response.data.user.nome}!`, 'success');
             
-            // Reset form
             document.getElementById('loginForm').reset();
             
-            // Redirect to dashboard
             console.log('Redirecting to dashboard...');
-            console.log('User authenticated:', window.elearning.isAuthenticated);
             window.elearning.showSection('dashboard');
         }
     } catch (error) {
         console.error('Login error:', error);
+        window.elearning.logout();
         showNotification(error.message || 'Erro ao fazer login', 'error');
     } finally {
         showLoading(false);
@@ -278,7 +288,6 @@ async function handleRegister(event) {
     const password = document.getElementById('registerPassword').value;
     const confirmPassword = document.getElementById('registerConfirmPassword').value;
     
-    // Validation
     if (!name || !email || !password || !confirmPassword) {
         showNotification('Por favor, preencha todos os campos', 'error');
         return;
@@ -296,12 +305,13 @@ async function handleRegister(event) {
     
     try {
         showLoading(true);
+        window.elearning.logout();
         
         const userData = {
             nome: name,
             email: email,
             senha: password,
-            perfil_aprendizado: 'beginner' // Define como iniciante por padrão
+            perfil_aprendizado: 'beginner'
         };
         
         const response = await UserAPI.register(userData);
@@ -309,11 +319,13 @@ async function handleRegister(event) {
         hideModal('registerModal');
         showNotification('Conta criada com sucesso! Faça login para continuar.', 'success');
         
-        // Reset form
         document.getElementById('registerForm').reset();
         
-        // Show login modal
         setTimeout(() => {
+            const loginEmailField = document.getElementById('loginEmail');
+            if (loginEmailField) {
+                loginEmailField.value = email;
+            }
             showModal('loginModal');
         }, 1000);
         

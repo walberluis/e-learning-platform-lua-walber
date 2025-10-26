@@ -374,7 +374,6 @@ function showTrilhaSuccessModal(trilhaData) {
     document.body.appendChild(modal);
 }
 
-// Show user trilhas
 async function showUserTrilhas() {
     console.log('showUserTrilhas called');
     const currentUser = window.elearning?.getCurrentUser();
@@ -383,18 +382,29 @@ async function showUserTrilhas() {
         return;
     }
     
+    const storedUserId = localStorage.getItem('elearning_user_id');
+    if (storedUserId && parseInt(storedUserId) !== currentUser.id) {
+        console.error('User ID mismatch! Stored:', storedUserId, 'Current:', currentUser.id);
+        console.error('Forcing logout to prevent data contamination');
+        window.elearning.logout();
+        window.elearning.showNotification('Sessão inválida. Por favor, faça login novamente.', 'error');
+        showModal('loginModal');
+        return;
+    }
+    
     try {
-        console.log('Fetching user trilhas for user:', currentUser.id);
+        console.log('Fetching user trilhas for user:', currentUser.id, currentUser.email);
         const response = await fetch(`/api/v1/trilhas-personalizadas/user/${currentUser.id}/created`);
         const result = await response.json();
         
         console.log('User trilhas response:', result);
         
         if (result.success && result.data.trilhas) {
-            console.log('Displaying user trilhas:', result.data.trilhas);
+            console.log(`Found ${result.data.trilhas.length} trilhas for user ${currentUser.id}`);
             displayUserTrilhas(result.data.trilhas);
         } else {
             console.log('No trilhas found or error in response');
+            displayUserTrilhas([]);
         }
     } catch (error) {
         console.error('Error loading user trilhas:', error);
