@@ -5,7 +5,7 @@ Data Access Layer - Repository Package
 
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func
+from sqlalchemy import func, and_
 from data_access.repositories.base_repository import BaseRepository
 from infrastructure.database.models import (
     Trilha,
