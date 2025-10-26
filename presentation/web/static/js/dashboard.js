@@ -537,7 +537,7 @@ function updateCustomTrilhasSection(customTrilhasData) {
         const dashboardGrid = document.querySelector('.dashboard-grid');
         if (dashboardGrid) {
             const customTrilhasCard = document.createElement('div');
-            customTrilhasCard.className = 'dashboard-card';
+            customTrilhasCard.className = 'dashboard-card bigger-card';
             customTrilhasCard.innerHTML = `
                 <div class="card-header">
                     <h3>Trilhas Criadas</h3>
