@@ -7,7 +7,13 @@ from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, and_
 from data_access.repositories.base_repository import BaseRepository
-from infrastructure.database.models import Trilha, Conteudo, Usuario, Desempenho
+from infrastructure.database.models import (
+    Trilha,
+    Conteudo,
+    Usuario,
+    Desempenho,
+    user_trilha_association,
+)
 
 class TrilhaRepository(BaseRepository[Trilha]):
     """
@@ -52,7 +58,12 @@ class TrilhaRepository(BaseRepository[Trilha]):
             print(f"Error getting trilha with usuarios {trilha_id}: {e}")
             return None
     
-    async def get_by_difficulty(self, dificuldade: str) -> List[Trilha]:
+    async def get_by_difficulty(
+        self,
+        dificuldade: str,
+        limit: int = 100,
+        offset: int = 0
+    ) -> List[Trilha]:
         """
         Get trilhas by difficulty level.
         
@@ -64,9 +75,55 @@ class TrilhaRepository(BaseRepository[Trilha]):
         """
         try:
             db = self.get_db()
-            return db.query(Trilha).filter(Trilha.dificuldade == dificuldade).all()
+            return (
+                db.query(Trilha)
+                .filter(Trilha.dificuldade == dificuldade)
+                .offset(offset)
+                .limit(limit)
+                .all()
+            )
         except Exception as e:
             print(f"Error getting trilhas by difficulty '{dificuldade}': {e}")
+            return []
+
+    async def get_by_user(
+        self,
+        user_id: int,
+        dificuldade: Optional[str] = None,
+        limit: int = 100,
+        offset: int = 0
+    ) -> List[Trilha]:
+        """
+        Get trilhas in which a specific user is enrolled.
+
+        Args:
+            user_id: User ID whose trilhas should be returned
+            dificuldade: Optional difficulty filter
+            limit: Maximum number of results
+            offset: Results offset for pagination
+
+        Returns:
+            List of trilhas associated with the user
+        """
+        try:
+            db = self.get_db()
+
+            query = (
+                db.query(Trilha)
+                .join(
+                    user_trilha_association,
+                    Trilha.id == user_trilha_association.c.trilha_id
+                )
+                .filter(user_trilha_association.c.user_id == user_id)
+                .order_by(Trilha.created_at.desc(), Trilha.id.desc())
+            )
+
+            if dificuldade:
+                query = query.filter(Trilha.dificuldade == dificuldade)
+
+            return query.offset(offset).limit(limit).all()
+        except Exception as e:
+            print(f"Error getting trilhas for user {user_id}: {e}")
             return []
     
     async def search_trilhas(self, search_term: str, limit: int = 50) -> List[Trilha]:
@@ -341,4 +398,3 @@ class TrilhaRepository(BaseRepository[Trilha]):
         except Exception as e:
             print(f"Error getting trilhas by creator {criador_id}: {e}")
             return []
-
