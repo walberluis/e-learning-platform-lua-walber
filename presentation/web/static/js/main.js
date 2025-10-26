@@ -400,8 +400,9 @@ async function loadTrilhas() {
         `;
         
         // If user is authenticated, load their personalized trilhas
+        let currentUser = null;
         if (window.elearning?.isAuthenticated) {
-            const currentUser = window.elearning.getCurrentUser();
+            currentUser = window.elearning.getCurrentUser();
             if (currentUser && window.trilhasPersonalizadas?.showUserTrilhas) {
                 console.log('Loading personalized trilhas for authenticated user');
                 // Call the function that loads and displays user trilhas
@@ -412,20 +413,44 @@ async function loadTrilhas() {
             }
         }
         
-        // Fallback: load standard trilhas from API
-        const trilhas = await TrilhaAPI.getAll();
+        // Fallback: load standard trilhas from API applying user filter when available
+        const params = {};
+        if (currentUser?.id) {
+            params.user_id = currentUser.id;
+        }
         
-        if (trilhas && trilhas.length > 0) {
-            trilhasGrid.innerHTML = trilhas.map(trilha => `
-                <div class="trilha-card" data-level="${trilha.nivel || 'beginner'}">
+        const trilhasResponse = await TrilhaAPI.getAll(params);
+        const extractTrilhas = (response) => {
+            if (!response) return [];
+            if (Array.isArray(response)) return response;
+            if (Array.isArray(response?.data?.trilhas)) return response.data.trilhas;
+            if (Array.isArray(response?.trilhas)) return response.trilhas;
+            return [];
+        };
+        
+        const trilhasData = extractTrilhas(trilhasResponse).map(trilha => {
+            const dificuldade = trilha.dificuldade || trilha.nivel || 'beginner';
+            return {
+                id: trilha.id,
+                titulo: trilha.titulo || trilha.nome || 'Trilha',
+                dificuldade,
+                descricao: trilha.descricao || trilha.description || 'Conteúdo disponível em breve.',
+                modulesCount: trilha.modules_count ?? trilha.total_conteudos ?? 0,
+                duracao: trilha.estimated_duration || trilha.duracao_estimada || 'N/A'
+            };
+        });
+        
+        if (trilhasData.length > 0) {
+            trilhasGrid.innerHTML = trilhasData.map(trilha => `
+                <div class="trilha-card" data-level="${trilha.dificuldade}">
                     <div class="trilha-header">
-                        <h3 class="trilha-title">${trilha.nome}</h3>
-                        <span class="trilha-level">${getLevelLabel(trilha.nivel)}</span>
+                        <h3 class="trilha-title">${trilha.titulo}</h3>
+                        <span class="trilha-level">${getLevelLabel(trilha.dificuldade)}</span>
                     </div>
                     <p class="trilha-description">${trilha.descricao}</p>
                     <div class="trilha-stats">
-                        <span><i class="fas fa-book"></i> ${trilha.total_conteudos || 0} conteúdos</span>
-                        <span><i class="fas fa-clock"></i> ${trilha.duracao_estimada || 'N/A'}</span>
+                        <span><i class="fas fa-book"></i> ${trilha.modulesCount} conteúdos</span>
+                        <span><i class="fas fa-clock"></i> ${trilha.duracao}</span>
                     </div>
                     <div class="trilha-actions">
                         <button class="btn btn-primary" onclick="startTrilha(${trilha.id})">
